@@ -1,0 +1,267 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Invoice {
+  id                                  String        @id @default(cuid())
+  invoiceNumber                       String
+  invoiceDate                         DateTime?
+  dueDate                             DateTime?
+  amount                              Decimal?      @default(0)
+  taxRate                             Decimal?      @default(0)
+  taxAmount                           Decimal?      @default(0)
+  totalAmount                         Decimal       @default(0)
+  isPaid                              Boolean       @default(false)
+  paymentDate                         DateTime?
+  status                              String        @default("pending")
+  type                                String?       @default("incoming")
+  notes                               String?
+  customerId                          String?
+  supplierId                          String?
+  createdAt                           DateTime      @default(now())
+  updatedAt                           DateTime      @updatedAt
+  issuerAddress                       String?
+  issuerName                          String?
+  issuerTaxId                         String?
+  recipientAddress                    String?
+  recipientName                       String?
+  recipientTaxId                      String?
+  customer                            Contact?      @relation(fields: [customerId], references: [id])
+  Contact_Invoice_supplierIdToContact Contact?      @relation("Invoice_supplierIdToContact", fields: [supplierId], references: [id])
+  InvoiceFile                         InvoiceFile[]
+  items                               InvoiceItem[]
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  description String
+  quantity    Decimal  @default(1)
+  unitPrice   Decimal
+  vatRate     Decimal  @default(0)
+  vatAmount   Decimal  @default(0)
+  totalAmount Decimal
+  invoiceId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id                                  String                 @id
+  name                                String
+  taxNumber                           String?
+  taxOffice                           String?
+  address                             String?
+  phone                               String?
+  email                               String?
+  isCustomer                          Boolean                @default(true)
+  isSupplier                          Boolean                @default(false)
+  createdAt                           DateTime               @default(now())
+  updatedAt                           DateTime
+  Expense                             Expense[]
+  invoices                            Invoice[]
+  Invoice_Invoice_supplierIdToContact Invoice[]              @relation("Invoice_supplierIdToContact")
+  RecurringTransaction                RecurringTransaction[]
+}
+
+model Expense {
+  id            String   @id
+  title         String
+  description   String?
+  amount        Decimal
+  expenseDate   DateTime
+  category      String
+  paymentMethod String
+  status        String   @default("completed")
+  receiptUrl    String?
+  supplierId    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  Contact       Contact? @relation(fields: [supplierId], references: [id])
+}
+
+model InvoiceFile {
+  id         String   @id
+  filename   String
+  fileKey    String
+  fileSize   Int
+  mimeType   String
+  uploadDate DateTime @default(now())
+  invoiceId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  Invoice    Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model RecurringTransaction {
+  id            String    @id
+  title         String
+  description   String?
+  amount        Decimal
+  type          String
+  category      String
+  paymentMethod String?
+  startDate     DateTime
+  endDate       DateTime?
+  frequency     String    @default("monthly")
+  dayOfMonth    Int?
+  dayOfWeek     Int?
+  isActive      Boolean   @default(true)
+  lastProcessed DateTime?
+  contactId     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  Contact       Contact?  @relation(fields: [contactId], references: [id])
+}
+
+model User {
+  id           String   @id
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         String   @default("user")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+}
+
+// Personel Yönetimi İçin Veri Modelleri
+
+model Employee {
+  id                   String                @id @default(cuid())
+  name                 String
+  position             String
+  department           String
+  startDate            DateTime
+  email                String?
+  phone                String?
+  address              String?
+  taxId                String? // TC Kimlik No
+  socialSecurityNumber String? // SGK No
+  bankAccount          String?
+  salary               Decimal
+  status               EmployeeStatus        @default(ACTIVE)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  salaryPayments       SalaryPayment[]
+  leaveRequests        LeaveRequest[]
+  documents            EmployeeDocument[]
+  leaveBalance         EmployeeLeaveBalance?
+}
+
+model SalaryPayment {
+  id            String            @id @default(cuid())
+  employeeId    String
+  paymentDate   DateTime
+  amount        Decimal
+  type          SalaryPaymentType @default(SALARY)
+  taxAmount     Decimal           @default(0)
+  netAmount     Decimal
+  notes         String?
+  paymentMethod String?
+  status        PaymentStatus     @default(PAID)
+  bonusTypeId   String?
+  bonusType     BonusType?        @relation(fields: [bonusTypeId], references: [id])
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  employee      Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model LeaveRequest {
+  id         String      @id @default(cuid())
+  employeeId String
+  startDate  DateTime
+  endDate    DateTime
+  days       Int
+  type       LeaveType
+  status     LeaveStatus @default(PENDING)
+  notes      String?
+  approvedAt DateTime?
+  approvedBy String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  employee   Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model EmployeeDocument {
+  id         String   @id @default(cuid())
+  employeeId String
+  title      String
+  fileKey    String
+  fileSize   Int
+  mimeType   String
+  uploadDate DateTime @default(now())
+  category   String   @default("other")
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model EmployeeLeaveBalance {
+  id               String   @id @default(cuid())
+  employeeId       String   @unique
+  year             Int // İzin yılı
+  annualLeaveTotal Int      @default(14) // Toplam yıllık izin hakkı (yasal olarak en az 14 gün)
+  annualLeaveUsed  Int      @default(0) // Kullanılan yıllık izin
+  sickLeaveTotal   Int      @default(5) // Hastalık izni hakkı
+  sickLeaveUsed    Int      @default(0) // Kullanılan hastalık izni
+  lastUpdated      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+enum SalaryPaymentType {
+  SALARY
+  BONUS
+  ALLOWANCE
+  ADVANCE
+  OTHER
+}
+
+// Özel Prim Türleri için model
+model BonusType {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  payments    SalaryPayment[]
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  MATERNITY
+  PATERNITY
+  BEREAVEMENT
+  UNPAID
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}

@@ -1,26 +1,73 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  html {
+    @apply transition-colors duration-200;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  html.dark body {
+    @apply bg-dark-bg text-dark-text;
+  }
+  
+  /* Navbar */
+  html.dark .bg-white {
+    @apply bg-dark-card;
+  }
+  
+  html.dark .border-gray-200 {
+    @apply border-dark-border;
+  }
+  
+  html.dark .text-gray-900 {
+    @apply text-dark-text;
+  }
+  
+  html.dark .text-gray-700 {
+    @apply text-gray-300;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Temel bileşen stilleri */
+@layer components {
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+  }
+  
+  html.dark .card {
+    @apply bg-dark-card border-dark-border shadow-md;
+  }
+  
+  .input {
+    @apply bg-white border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500;
+  }
+
+  html.dark .input {
+    @apply bg-dark-card border-dark-border text-dark-text focus:ring-dark-primary;
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+  
+  html.dark .btn-primary {
+    @apply bg-dark-primary hover:bg-blue-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300;
+  }
+  
+  html.dark .btn-secondary {
+    @apply bg-dark-secondary text-dark-text hover:bg-gray-700 border-dark-border;
+  }
 }
