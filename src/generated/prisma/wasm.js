@@ -259,7 +259,6 @@ exports.Prisma.SalaryPaymentScalarFieldEnum = {
   notes: 'notes',
   paymentMethod: 'paymentMethod',
   status: 'status',
-  bonusTypeId: 'bonusTypeId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -302,15 +301,6 @@ exports.Prisma.EmployeeLeaveBalanceScalarFieldEnum = {
   sickLeaveTotal: 'sickLeaveTotal',
   sickLeaveUsed: 'sickLeaveUsed',
   lastUpdated: 'lastUpdated',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.BonusTypeScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -379,8 +369,7 @@ exports.Prisma.ModelName = {
   SalaryPayment: 'SalaryPayment',
   LeaveRequest: 'LeaveRequest',
   EmployeeDocument: 'EmployeeDocument',
-  EmployeeLeaveBalance: 'EmployeeLeaveBalance',
-  BonusType: 'BonusType'
+  EmployeeLeaveBalance: 'EmployeeLeaveBalance'
 };
 
 /**

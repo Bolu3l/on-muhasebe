@@ -73,11 +73,6 @@ export type EmployeeDocument = $Result.DefaultSelection<Prisma.$EmployeeDocument
  * 
  */
 export type EmployeeLeaveBalance = $Result.DefaultSelection<Prisma.$EmployeeLeaveBalancePayload>
-/**
- * Model BonusType
- * 
- */
-export type BonusType = $Result.DefaultSelection<Prisma.$BonusTypePayload>
 
 /**
  * Enums
@@ -401,16 +396,6 @@ export class PrismaClient<
     * ```
     */
   get employeeLeaveBalance(): Prisma.EmployeeLeaveBalanceDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.bonusType`: Exposes CRUD operations for the **BonusType** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more BonusTypes
-    * const bonusTypes = await prisma.bonusType.findMany()
-    * ```
-    */
-  get bonusType(): Prisma.BonusTypeDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -862,8 +847,7 @@ export namespace Prisma {
     SalaryPayment: 'SalaryPayment',
     LeaveRequest: 'LeaveRequest',
     EmployeeDocument: 'EmployeeDocument',
-    EmployeeLeaveBalance: 'EmployeeLeaveBalance',
-    BonusType: 'BonusType'
+    EmployeeLeaveBalance: 'EmployeeLeaveBalance'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -882,7 +866,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "invoice" | "invoiceItem" | "contact" | "expense" | "invoiceFile" | "recurringTransaction" | "user" | "employee" | "salaryPayment" | "leaveRequest" | "employeeDocument" | "employeeLeaveBalance" | "bonusType"
+      modelProps: "invoice" | "invoiceItem" | "contact" | "expense" | "invoiceFile" | "recurringTransaction" | "user" | "employee" | "salaryPayment" | "leaveRequest" | "employeeDocument" | "employeeLeaveBalance"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1774,80 +1758,6 @@ export namespace Prisma {
           }
         }
       }
-      BonusType: {
-        payload: Prisma.$BonusTypePayload<ExtArgs>
-        fields: Prisma.BonusTypeFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.BonusTypeFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.BonusTypeFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>
-          }
-          findFirst: {
-            args: Prisma.BonusTypeFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.BonusTypeFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>
-          }
-          findMany: {
-            args: Prisma.BonusTypeFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>[]
-          }
-          create: {
-            args: Prisma.BonusTypeCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>
-          }
-          createMany: {
-            args: Prisma.BonusTypeCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.BonusTypeCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>[]
-          }
-          delete: {
-            args: Prisma.BonusTypeDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>
-          }
-          update: {
-            args: Prisma.BonusTypeUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>
-          }
-          deleteMany: {
-            args: Prisma.BonusTypeDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.BonusTypeUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateManyAndReturn: {
-            args: Prisma.BonusTypeUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>[]
-          }
-          upsert: {
-            args: Prisma.BonusTypeUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$BonusTypePayload>
-          }
-          aggregate: {
-            args: Prisma.BonusTypeAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateBonusType>
-          }
-          groupBy: {
-            args: Prisma.BonusTypeGroupByArgs<ExtArgs>
-            result: $Utils.Optional<BonusTypeGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.BonusTypeCountArgs<ExtArgs>
-            result: $Utils.Optional<BonusTypeCountAggregateOutputType> | number
-          }
-        }
-      }
     }
   } & {
     other: {
@@ -1944,7 +1854,6 @@ export namespace Prisma {
     leaveRequest?: LeaveRequestOmit
     employeeDocument?: EmployeeDocumentOmit
     employeeLeaveBalance?: EmployeeLeaveBalanceOmit
-    bonusType?: BonusTypeOmit
   }
 
   /* Types for Logging */
@@ -2178,37 +2087,6 @@ export namespace Prisma {
    */
   export type EmployeeCountOutputTypeCountDocumentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EmployeeDocumentWhereInput
-  }
-
-
-  /**
-   * Count Type BonusTypeCountOutputType
-   */
-
-  export type BonusTypeCountOutputType = {
-    payments: number
-  }
-
-  export type BonusTypeCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    payments?: boolean | BonusTypeCountOutputTypeCountPaymentsArgs
-  }
-
-  // Custom InputTypes
-  /**
-   * BonusTypeCountOutputType without action
-   */
-  export type BonusTypeCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusTypeCountOutputType
-     */
-    select?: BonusTypeCountOutputTypeSelect<ExtArgs> | null
-  }
-
-  /**
-   * BonusTypeCountOutputType without action
-   */
-  export type BonusTypeCountOutputTypeCountPaymentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: SalaryPaymentWhereInput
   }
 
 
@@ -12053,7 +11931,6 @@ export namespace Prisma {
     notes: string | null
     paymentMethod: string | null
     status: $Enums.PaymentStatus | null
-    bonusTypeId: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -12069,7 +11946,6 @@ export namespace Prisma {
     notes: string | null
     paymentMethod: string | null
     status: $Enums.PaymentStatus | null
-    bonusTypeId: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -12085,7 +11961,6 @@ export namespace Prisma {
     notes: number
     paymentMethod: number
     status: number
-    bonusTypeId: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -12115,7 +11990,6 @@ export namespace Prisma {
     notes?: true
     paymentMethod?: true
     status?: true
-    bonusTypeId?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -12131,7 +12005,6 @@ export namespace Prisma {
     notes?: true
     paymentMethod?: true
     status?: true
-    bonusTypeId?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -12147,7 +12020,6 @@ export namespace Prisma {
     notes?: true
     paymentMethod?: true
     status?: true
-    bonusTypeId?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -12250,7 +12122,6 @@ export namespace Prisma {
     notes: string | null
     paymentMethod: string | null
     status: $Enums.PaymentStatus
-    bonusTypeId: string | null
     createdAt: Date
     updatedAt: Date
     _count: SalaryPaymentCountAggregateOutputType | null
@@ -12285,10 +12156,8 @@ export namespace Prisma {
     notes?: boolean
     paymentMethod?: boolean
     status?: boolean
-    bonusTypeId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    bonusType?: boolean | SalaryPayment$bonusTypeArgs<ExtArgs>
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["salaryPayment"]>
 
@@ -12303,10 +12172,8 @@ export namespace Prisma {
     notes?: boolean
     paymentMethod?: boolean
     status?: boolean
-    bonusTypeId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    bonusType?: boolean | SalaryPayment$bonusTypeArgs<ExtArgs>
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["salaryPayment"]>
 
@@ -12321,10 +12188,8 @@ export namespace Prisma {
     notes?: boolean
     paymentMethod?: boolean
     status?: boolean
-    bonusTypeId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    bonusType?: boolean | SalaryPayment$bonusTypeArgs<ExtArgs>
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["salaryPayment"]>
 
@@ -12339,29 +12204,24 @@ export namespace Prisma {
     notes?: boolean
     paymentMethod?: boolean
     status?: boolean
-    bonusTypeId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type SalaryPaymentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "employeeId" | "paymentDate" | "amount" | "type" | "taxAmount" | "netAmount" | "notes" | "paymentMethod" | "status" | "bonusTypeId" | "createdAt" | "updatedAt", ExtArgs["result"]["salaryPayment"]>
+  export type SalaryPaymentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "employeeId" | "paymentDate" | "amount" | "type" | "taxAmount" | "netAmount" | "notes" | "paymentMethod" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["salaryPayment"]>
   export type SalaryPaymentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    bonusType?: boolean | SalaryPayment$bonusTypeArgs<ExtArgs>
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
   }
   export type SalaryPaymentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    bonusType?: boolean | SalaryPayment$bonusTypeArgs<ExtArgs>
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
   }
   export type SalaryPaymentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    bonusType?: boolean | SalaryPayment$bonusTypeArgs<ExtArgs>
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
   }
 
   export type $SalaryPaymentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "SalaryPayment"
     objects: {
-      bonusType: Prisma.$BonusTypePayload<ExtArgs> | null
       employee: Prisma.$EmployeePayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -12375,7 +12235,6 @@ export namespace Prisma {
       notes: string | null
       paymentMethod: string | null
       status: $Enums.PaymentStatus
-      bonusTypeId: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["salaryPayment"]>
@@ -12772,7 +12631,6 @@ export namespace Prisma {
    */
   export interface Prisma__SalaryPaymentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    bonusType<T extends SalaryPayment$bonusTypeArgs<ExtArgs> = {}>(args?: Subset<T, SalaryPayment$bonusTypeArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     employee<T extends EmployeeDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EmployeeDefaultArgs<ExtArgs>>): Prisma__EmployeeClient<$Result.GetResult<Prisma.$EmployeePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -12813,7 +12671,6 @@ export namespace Prisma {
     readonly notes: FieldRef<"SalaryPayment", 'String'>
     readonly paymentMethod: FieldRef<"SalaryPayment", 'String'>
     readonly status: FieldRef<"SalaryPayment", 'PaymentStatus'>
-    readonly bonusTypeId: FieldRef<"SalaryPayment", 'String'>
     readonly createdAt: FieldRef<"SalaryPayment", 'DateTime'>
     readonly updatedAt: FieldRef<"SalaryPayment", 'DateTime'>
   }
@@ -13209,25 +13066,6 @@ export namespace Prisma {
      * Limit how many SalaryPayments to delete.
      */
     limit?: number
-  }
-
-  /**
-   * SalaryPayment.bonusType
-   */
-  export type SalaryPayment$bonusTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    where?: BonusTypeWhereInput
   }
 
   /**
@@ -16776,1089 +16614,6 @@ export namespace Prisma {
 
 
   /**
-   * Model BonusType
-   */
-
-  export type AggregateBonusType = {
-    _count: BonusTypeCountAggregateOutputType | null
-    _min: BonusTypeMinAggregateOutputType | null
-    _max: BonusTypeMaxAggregateOutputType | null
-  }
-
-  export type BonusTypeMinAggregateOutputType = {
-    id: string | null
-    name: string | null
-    description: string | null
-    isActive: boolean | null
-    createdAt: Date | null
-    updatedAt: Date | null
-  }
-
-  export type BonusTypeMaxAggregateOutputType = {
-    id: string | null
-    name: string | null
-    description: string | null
-    isActive: boolean | null
-    createdAt: Date | null
-    updatedAt: Date | null
-  }
-
-  export type BonusTypeCountAggregateOutputType = {
-    id: number
-    name: number
-    description: number
-    isActive: number
-    createdAt: number
-    updatedAt: number
-    _all: number
-  }
-
-
-  export type BonusTypeMinAggregateInputType = {
-    id?: true
-    name?: true
-    description?: true
-    isActive?: true
-    createdAt?: true
-    updatedAt?: true
-  }
-
-  export type BonusTypeMaxAggregateInputType = {
-    id?: true
-    name?: true
-    description?: true
-    isActive?: true
-    createdAt?: true
-    updatedAt?: true
-  }
-
-  export type BonusTypeCountAggregateInputType = {
-    id?: true
-    name?: true
-    description?: true
-    isActive?: true
-    createdAt?: true
-    updatedAt?: true
-    _all?: true
-  }
-
-  export type BonusTypeAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which BonusType to aggregate.
-     */
-    where?: BonusTypeWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of BonusTypes to fetch.
-     */
-    orderBy?: BonusTypeOrderByWithRelationInput | BonusTypeOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: BonusTypeWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` BonusTypes from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` BonusTypes.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned BonusTypes
-    **/
-    _count?: true | BonusTypeCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: BonusTypeMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: BonusTypeMaxAggregateInputType
-  }
-
-  export type GetBonusTypeAggregateType<T extends BonusTypeAggregateArgs> = {
-        [P in keyof T & keyof AggregateBonusType]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateBonusType[P]>
-      : GetScalarType<T[P], AggregateBonusType[P]>
-  }
-
-
-
-
-  export type BonusTypeGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: BonusTypeWhereInput
-    orderBy?: BonusTypeOrderByWithAggregationInput | BonusTypeOrderByWithAggregationInput[]
-    by: BonusTypeScalarFieldEnum[] | BonusTypeScalarFieldEnum
-    having?: BonusTypeScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: BonusTypeCountAggregateInputType | true
-    _min?: BonusTypeMinAggregateInputType
-    _max?: BonusTypeMaxAggregateInputType
-  }
-
-  export type BonusTypeGroupByOutputType = {
-    id: string
-    name: string
-    description: string | null
-    isActive: boolean
-    createdAt: Date
-    updatedAt: Date
-    _count: BonusTypeCountAggregateOutputType | null
-    _min: BonusTypeMinAggregateOutputType | null
-    _max: BonusTypeMaxAggregateOutputType | null
-  }
-
-  type GetBonusTypeGroupByPayload<T extends BonusTypeGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<BonusTypeGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof BonusTypeGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], BonusTypeGroupByOutputType[P]>
-            : GetScalarType<T[P], BonusTypeGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type BonusTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-    description?: boolean
-    isActive?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-    payments?: boolean | BonusType$paymentsArgs<ExtArgs>
-    _count?: boolean | BonusTypeCountOutputTypeDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["bonusType"]>
-
-  export type BonusTypeSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-    description?: boolean
-    isActive?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }, ExtArgs["result"]["bonusType"]>
-
-  export type BonusTypeSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    name?: boolean
-    description?: boolean
-    isActive?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }, ExtArgs["result"]["bonusType"]>
-
-  export type BonusTypeSelectScalar = {
-    id?: boolean
-    name?: boolean
-    description?: boolean
-    isActive?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }
-
-  export type BonusTypeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "description" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["bonusType"]>
-  export type BonusTypeInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    payments?: boolean | BonusType$paymentsArgs<ExtArgs>
-    _count?: boolean | BonusTypeCountOutputTypeDefaultArgs<ExtArgs>
-  }
-  export type BonusTypeIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-  export type BonusTypeIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
-
-  export type $BonusTypePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "BonusType"
-    objects: {
-      payments: Prisma.$SalaryPaymentPayload<ExtArgs>[]
-    }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      name: string
-      description: string | null
-      isActive: boolean
-      createdAt: Date
-      updatedAt: Date
-    }, ExtArgs["result"]["bonusType"]>
-    composites: {}
-  }
-
-  type BonusTypeGetPayload<S extends boolean | null | undefined | BonusTypeDefaultArgs> = $Result.GetResult<Prisma.$BonusTypePayload, S>
-
-  type BonusTypeCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<BonusTypeFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: BonusTypeCountAggregateInputType | true
-    }
-
-  export interface BonusTypeDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['BonusType'], meta: { name: 'BonusType' } }
-    /**
-     * Find zero or one BonusType that matches the filter.
-     * @param {BonusTypeFindUniqueArgs} args - Arguments to find a BonusType
-     * @example
-     * // Get one BonusType
-     * const bonusType = await prisma.bonusType.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends BonusTypeFindUniqueArgs>(args: SelectSubset<T, BonusTypeFindUniqueArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one BonusType that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {BonusTypeFindUniqueOrThrowArgs} args - Arguments to find a BonusType
-     * @example
-     * // Get one BonusType
-     * const bonusType = await prisma.bonusType.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends BonusTypeFindUniqueOrThrowArgs>(args: SelectSubset<T, BonusTypeFindUniqueOrThrowArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first BonusType that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {BonusTypeFindFirstArgs} args - Arguments to find a BonusType
-     * @example
-     * // Get one BonusType
-     * const bonusType = await prisma.bonusType.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends BonusTypeFindFirstArgs>(args?: SelectSubset<T, BonusTypeFindFirstArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first BonusType that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {BonusTypeFindFirstOrThrowArgs} args - Arguments to find a BonusType
-     * @example
-     * // Get one BonusType
-     * const bonusType = await prisma.bonusType.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends BonusTypeFindFirstOrThrowArgs>(args?: SelectSubset<T, BonusTypeFindFirstOrThrowArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more BonusTypes that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {BonusTypeFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all BonusTypes
-     * const bonusTypes = await prisma.bonusType.findMany()
-     * 
-     * // Get first 10 BonusTypes
-     * const bonusTypes = await prisma.bonusType.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const bonusTypeWithIdOnly = await prisma.bonusType.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends BonusTypeFindManyArgs>(args?: SelectSubset<T, BonusTypeFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a BonusType.
-     * @param {BonusTypeCreateArgs} args - Arguments to create a BonusType.
-     * @example
-     * // Create one BonusType
-     * const BonusType = await prisma.bonusType.create({
-     *   data: {
-     *     // ... data to create a BonusType
-     *   }
-     * })
-     * 
-     */
-    create<T extends BonusTypeCreateArgs>(args: SelectSubset<T, BonusTypeCreateArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many BonusTypes.
-     * @param {BonusTypeCreateManyArgs} args - Arguments to create many BonusTypes.
-     * @example
-     * // Create many BonusTypes
-     * const bonusType = await prisma.bonusType.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends BonusTypeCreateManyArgs>(args?: SelectSubset<T, BonusTypeCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many BonusTypes and returns the data saved in the database.
-     * @param {BonusTypeCreateManyAndReturnArgs} args - Arguments to create many BonusTypes.
-     * @example
-     * // Create many BonusTypes
-     * const bonusType = await prisma.bonusType.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many BonusTypes and only return the `id`
-     * const bonusTypeWithIdOnly = await prisma.bonusType.createManyAndReturn({
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends BonusTypeCreateManyAndReturnArgs>(args?: SelectSubset<T, BonusTypeCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Delete a BonusType.
-     * @param {BonusTypeDeleteArgs} args - Arguments to delete one BonusType.
-     * @example
-     * // Delete one BonusType
-     * const BonusType = await prisma.bonusType.delete({
-     *   where: {
-     *     // ... filter to delete one BonusType
-     *   }
-     * })
-     * 
-     */
-    delete<T extends BonusTypeDeleteArgs>(args: SelectSubset<T, BonusTypeDeleteArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one BonusType.
-     * @param {BonusTypeUpdateArgs} args - Arguments to update one BonusType.
-     * @example
-     * // Update one BonusType
-     * const bonusType = await prisma.bonusType.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends BonusTypeUpdateArgs>(args: SelectSubset<T, BonusTypeUpdateArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more BonusTypes.
-     * @param {BonusTypeDeleteManyArgs} args - Arguments to filter BonusTypes to delete.
-     * @example
-     * // Delete a few BonusTypes
-     * const { count } = await prisma.bonusType.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends BonusTypeDeleteManyArgs>(args?: SelectSubset<T, BonusTypeDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more BonusTypes.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {BonusTypeUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many BonusTypes
-     * const bonusType = await prisma.bonusType.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends BonusTypeUpdateManyArgs>(args: SelectSubset<T, BonusTypeUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more BonusTypes and returns the data updated in the database.
-     * @param {BonusTypeUpdateManyAndReturnArgs} args - Arguments to update many BonusTypes.
-     * @example
-     * // Update many BonusTypes
-     * const bonusType = await prisma.bonusType.updateManyAndReturn({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Update zero or more BonusTypes and only return the `id`
-     * const bonusTypeWithIdOnly = await prisma.bonusType.updateManyAndReturn({
-     *   select: { id: true },
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    updateManyAndReturn<T extends BonusTypeUpdateManyAndReturnArgs>(args: SelectSubset<T, BonusTypeUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Create or update one BonusType.
-     * @param {BonusTypeUpsertArgs} args - Arguments to update or create a BonusType.
-     * @example
-     * // Update or create a BonusType
-     * const bonusType = await prisma.bonusType.upsert({
-     *   create: {
-     *     // ... data to create a BonusType
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the BonusType we want to update
-     *   }
-     * })
-     */
-    upsert<T extends BonusTypeUpsertArgs>(args: SelectSubset<T, BonusTypeUpsertArgs<ExtArgs>>): Prisma__BonusTypeClient<$Result.GetResult<Prisma.$BonusTypePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of BonusTypes.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {BonusTypeCountArgs} args - Arguments to filter BonusTypes to count.
-     * @example
-     * // Count the number of BonusTypes
-     * const count = await prisma.bonusType.count({
-     *   where: {
-     *     // ... the filter for the BonusTypes we want to count
-     *   }
-     * })
-    **/
-    count<T extends BonusTypeCountArgs>(
-      args?: Subset<T, BonusTypeCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], BonusTypeCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a BonusType.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {BonusTypeAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends BonusTypeAggregateArgs>(args: Subset<T, BonusTypeAggregateArgs>): Prisma.PrismaPromise<GetBonusTypeAggregateType<T>>
-
-    /**
-     * Group by BonusType.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {BonusTypeGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends BonusTypeGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: BonusTypeGroupByArgs['orderBy'] }
-        : { orderBy?: BonusTypeGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, BonusTypeGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetBonusTypeGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the BonusType model
-   */
-  readonly fields: BonusTypeFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for BonusType.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__BonusTypeClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    payments<T extends BonusType$paymentsArgs<ExtArgs> = {}>(args?: Subset<T, BonusType$paymentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SalaryPaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the BonusType model
-   */
-  interface BonusTypeFieldRefs {
-    readonly id: FieldRef<"BonusType", 'String'>
-    readonly name: FieldRef<"BonusType", 'String'>
-    readonly description: FieldRef<"BonusType", 'String'>
-    readonly isActive: FieldRef<"BonusType", 'Boolean'>
-    readonly createdAt: FieldRef<"BonusType", 'DateTime'>
-    readonly updatedAt: FieldRef<"BonusType", 'DateTime'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * BonusType findUnique
-   */
-  export type BonusTypeFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * Filter, which BonusType to fetch.
-     */
-    where: BonusTypeWhereUniqueInput
-  }
-
-  /**
-   * BonusType findUniqueOrThrow
-   */
-  export type BonusTypeFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * Filter, which BonusType to fetch.
-     */
-    where: BonusTypeWhereUniqueInput
-  }
-
-  /**
-   * BonusType findFirst
-   */
-  export type BonusTypeFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * Filter, which BonusType to fetch.
-     */
-    where?: BonusTypeWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of BonusTypes to fetch.
-     */
-    orderBy?: BonusTypeOrderByWithRelationInput | BonusTypeOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for BonusTypes.
-     */
-    cursor?: BonusTypeWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` BonusTypes from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` BonusTypes.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of BonusTypes.
-     */
-    distinct?: BonusTypeScalarFieldEnum | BonusTypeScalarFieldEnum[]
-  }
-
-  /**
-   * BonusType findFirstOrThrow
-   */
-  export type BonusTypeFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * Filter, which BonusType to fetch.
-     */
-    where?: BonusTypeWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of BonusTypes to fetch.
-     */
-    orderBy?: BonusTypeOrderByWithRelationInput | BonusTypeOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for BonusTypes.
-     */
-    cursor?: BonusTypeWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` BonusTypes from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` BonusTypes.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of BonusTypes.
-     */
-    distinct?: BonusTypeScalarFieldEnum | BonusTypeScalarFieldEnum[]
-  }
-
-  /**
-   * BonusType findMany
-   */
-  export type BonusTypeFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * Filter, which BonusTypes to fetch.
-     */
-    where?: BonusTypeWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of BonusTypes to fetch.
-     */
-    orderBy?: BonusTypeOrderByWithRelationInput | BonusTypeOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing BonusTypes.
-     */
-    cursor?: BonusTypeWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` BonusTypes from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` BonusTypes.
-     */
-    skip?: number
-    distinct?: BonusTypeScalarFieldEnum | BonusTypeScalarFieldEnum[]
-  }
-
-  /**
-   * BonusType create
-   */
-  export type BonusTypeCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * The data needed to create a BonusType.
-     */
-    data: XOR<BonusTypeCreateInput, BonusTypeUncheckedCreateInput>
-  }
-
-  /**
-   * BonusType createMany
-   */
-  export type BonusTypeCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many BonusTypes.
-     */
-    data: BonusTypeCreateManyInput | BonusTypeCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * BonusType createManyAndReturn
-   */
-  export type BonusTypeCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelectCreateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * The data used to create many BonusTypes.
-     */
-    data: BonusTypeCreateManyInput | BonusTypeCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * BonusType update
-   */
-  export type BonusTypeUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * The data needed to update a BonusType.
-     */
-    data: XOR<BonusTypeUpdateInput, BonusTypeUncheckedUpdateInput>
-    /**
-     * Choose, which BonusType to update.
-     */
-    where: BonusTypeWhereUniqueInput
-  }
-
-  /**
-   * BonusType updateMany
-   */
-  export type BonusTypeUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update BonusTypes.
-     */
-    data: XOR<BonusTypeUpdateManyMutationInput, BonusTypeUncheckedUpdateManyInput>
-    /**
-     * Filter which BonusTypes to update
-     */
-    where?: BonusTypeWhereInput
-    /**
-     * Limit how many BonusTypes to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * BonusType updateManyAndReturn
-   */
-  export type BonusTypeUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelectUpdateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * The data used to update BonusTypes.
-     */
-    data: XOR<BonusTypeUpdateManyMutationInput, BonusTypeUncheckedUpdateManyInput>
-    /**
-     * Filter which BonusTypes to update
-     */
-    where?: BonusTypeWhereInput
-    /**
-     * Limit how many BonusTypes to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * BonusType upsert
-   */
-  export type BonusTypeUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * The filter to search for the BonusType to update in case it exists.
-     */
-    where: BonusTypeWhereUniqueInput
-    /**
-     * In case the BonusType found by the `where` argument doesn't exist, create a new BonusType with this data.
-     */
-    create: XOR<BonusTypeCreateInput, BonusTypeUncheckedCreateInput>
-    /**
-     * In case the BonusType was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<BonusTypeUpdateInput, BonusTypeUncheckedUpdateInput>
-  }
-
-  /**
-   * BonusType delete
-   */
-  export type BonusTypeDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-    /**
-     * Filter which BonusType to delete.
-     */
-    where: BonusTypeWhereUniqueInput
-  }
-
-  /**
-   * BonusType deleteMany
-   */
-  export type BonusTypeDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which BonusTypes to delete
-     */
-    where?: BonusTypeWhereInput
-    /**
-     * Limit how many BonusTypes to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * BonusType.payments
-   */
-  export type BonusType$paymentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the SalaryPayment
-     */
-    select?: SalaryPaymentSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the SalaryPayment
-     */
-    omit?: SalaryPaymentOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: SalaryPaymentInclude<ExtArgs> | null
-    where?: SalaryPaymentWhereInput
-    orderBy?: SalaryPaymentOrderByWithRelationInput | SalaryPaymentOrderByWithRelationInput[]
-    cursor?: SalaryPaymentWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: SalaryPaymentScalarFieldEnum | SalaryPaymentScalarFieldEnum[]
-  }
-
-  /**
-   * BonusType without action
-   */
-  export type BonusTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the BonusType
-     */
-    select?: BonusTypeSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the BonusType
-     */
-    omit?: BonusTypeOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: BonusTypeInclude<ExtArgs> | null
-  }
-
-
-  /**
    * Enums
    */
 
@@ -18035,7 +16790,6 @@ export namespace Prisma {
     notes: 'notes',
     paymentMethod: 'paymentMethod',
     status: 'status',
-    bonusTypeId: 'bonusTypeId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -18092,18 +16846,6 @@ export namespace Prisma {
   };
 
   export type EmployeeLeaveBalanceScalarFieldEnum = (typeof EmployeeLeaveBalanceScalarFieldEnum)[keyof typeof EmployeeLeaveBalanceScalarFieldEnum]
-
-
-  export const BonusTypeScalarFieldEnum: {
-    id: 'id',
-    name: 'name',
-    description: 'description',
-    isActive: 'isActive',
-    createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
-  };
-
-  export type BonusTypeScalarFieldEnum = (typeof BonusTypeScalarFieldEnum)[keyof typeof BonusTypeScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -19095,10 +17837,8 @@ export namespace Prisma {
     notes?: StringNullableFilter<"SalaryPayment"> | string | null
     paymentMethod?: StringNullableFilter<"SalaryPayment"> | string | null
     status?: EnumPaymentStatusFilter<"SalaryPayment"> | $Enums.PaymentStatus
-    bonusTypeId?: StringNullableFilter<"SalaryPayment"> | string | null
     createdAt?: DateTimeFilter<"SalaryPayment"> | Date | string
     updatedAt?: DateTimeFilter<"SalaryPayment"> | Date | string
-    bonusType?: XOR<BonusTypeNullableScalarRelationFilter, BonusTypeWhereInput> | null
     employee?: XOR<EmployeeScalarRelationFilter, EmployeeWhereInput>
   }
 
@@ -19113,10 +17853,8 @@ export namespace Prisma {
     notes?: SortOrderInput | SortOrder
     paymentMethod?: SortOrderInput | SortOrder
     status?: SortOrder
-    bonusTypeId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    bonusType?: BonusTypeOrderByWithRelationInput
     employee?: EmployeeOrderByWithRelationInput
   }
 
@@ -19134,10 +17872,8 @@ export namespace Prisma {
     notes?: StringNullableFilter<"SalaryPayment"> | string | null
     paymentMethod?: StringNullableFilter<"SalaryPayment"> | string | null
     status?: EnumPaymentStatusFilter<"SalaryPayment"> | $Enums.PaymentStatus
-    bonusTypeId?: StringNullableFilter<"SalaryPayment"> | string | null
     createdAt?: DateTimeFilter<"SalaryPayment"> | Date | string
     updatedAt?: DateTimeFilter<"SalaryPayment"> | Date | string
-    bonusType?: XOR<BonusTypeNullableScalarRelationFilter, BonusTypeWhereInput> | null
     employee?: XOR<EmployeeScalarRelationFilter, EmployeeWhereInput>
   }, "id">
 
@@ -19152,7 +17888,6 @@ export namespace Prisma {
     notes?: SortOrderInput | SortOrder
     paymentMethod?: SortOrderInput | SortOrder
     status?: SortOrder
-    bonusTypeId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: SalaryPaymentCountOrderByAggregateInput
@@ -19176,7 +17911,6 @@ export namespace Prisma {
     notes?: StringNullableWithAggregatesFilter<"SalaryPayment"> | string | null
     paymentMethod?: StringNullableWithAggregatesFilter<"SalaryPayment"> | string | null
     status?: EnumPaymentStatusWithAggregatesFilter<"SalaryPayment"> | $Enums.PaymentStatus
-    bonusTypeId?: StringNullableWithAggregatesFilter<"SalaryPayment"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"SalaryPayment"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"SalaryPayment"> | Date | string
   }
@@ -19440,66 +18174,6 @@ export namespace Prisma {
     lastUpdated?: DateTimeWithAggregatesFilter<"EmployeeLeaveBalance"> | Date | string
     createdAt?: DateTimeWithAggregatesFilter<"EmployeeLeaveBalance"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"EmployeeLeaveBalance"> | Date | string
-  }
-
-  export type BonusTypeWhereInput = {
-    AND?: BonusTypeWhereInput | BonusTypeWhereInput[]
-    OR?: BonusTypeWhereInput[]
-    NOT?: BonusTypeWhereInput | BonusTypeWhereInput[]
-    id?: StringFilter<"BonusType"> | string
-    name?: StringFilter<"BonusType"> | string
-    description?: StringNullableFilter<"BonusType"> | string | null
-    isActive?: BoolFilter<"BonusType"> | boolean
-    createdAt?: DateTimeFilter<"BonusType"> | Date | string
-    updatedAt?: DateTimeFilter<"BonusType"> | Date | string
-    payments?: SalaryPaymentListRelationFilter
-  }
-
-  export type BonusTypeOrderByWithRelationInput = {
-    id?: SortOrder
-    name?: SortOrder
-    description?: SortOrderInput | SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    payments?: SalaryPaymentOrderByRelationAggregateInput
-  }
-
-  export type BonusTypeWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: BonusTypeWhereInput | BonusTypeWhereInput[]
-    OR?: BonusTypeWhereInput[]
-    NOT?: BonusTypeWhereInput | BonusTypeWhereInput[]
-    name?: StringFilter<"BonusType"> | string
-    description?: StringNullableFilter<"BonusType"> | string | null
-    isActive?: BoolFilter<"BonusType"> | boolean
-    createdAt?: DateTimeFilter<"BonusType"> | Date | string
-    updatedAt?: DateTimeFilter<"BonusType"> | Date | string
-    payments?: SalaryPaymentListRelationFilter
-  }, "id">
-
-  export type BonusTypeOrderByWithAggregationInput = {
-    id?: SortOrder
-    name?: SortOrder
-    description?: SortOrderInput | SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: BonusTypeCountOrderByAggregateInput
-    _max?: BonusTypeMaxOrderByAggregateInput
-    _min?: BonusTypeMinOrderByAggregateInput
-  }
-
-  export type BonusTypeScalarWhereWithAggregatesInput = {
-    AND?: BonusTypeScalarWhereWithAggregatesInput | BonusTypeScalarWhereWithAggregatesInput[]
-    OR?: BonusTypeScalarWhereWithAggregatesInput[]
-    NOT?: BonusTypeScalarWhereWithAggregatesInput | BonusTypeScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"BonusType"> | string
-    name?: StringWithAggregatesFilter<"BonusType"> | string
-    description?: StringNullableWithAggregatesFilter<"BonusType"> | string | null
-    isActive?: BoolWithAggregatesFilter<"BonusType"> | boolean
-    createdAt?: DateTimeWithAggregatesFilter<"BonusType"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"BonusType"> | Date | string
   }
 
   export type InvoiceCreateInput = {
@@ -20444,7 +19118,6 @@ export namespace Prisma {
     status?: $Enums.PaymentStatus
     createdAt?: Date | string
     updatedAt?: Date | string
-    bonusType?: BonusTypeCreateNestedOneWithoutPaymentsInput
     employee: EmployeeCreateNestedOneWithoutSalaryPaymentsInput
   }
 
@@ -20459,7 +19132,6 @@ export namespace Prisma {
     notes?: string | null
     paymentMethod?: string | null
     status?: $Enums.PaymentStatus
-    bonusTypeId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -20476,7 +19148,6 @@ export namespace Prisma {
     status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    bonusType?: BonusTypeUpdateOneWithoutPaymentsNestedInput
     employee?: EmployeeUpdateOneRequiredWithoutSalaryPaymentsNestedInput
   }
 
@@ -20491,7 +19162,6 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     paymentMethod?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-    bonusTypeId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -20507,7 +19177,6 @@ export namespace Prisma {
     notes?: string | null
     paymentMethod?: string | null
     status?: $Enums.PaymentStatus
-    bonusTypeId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -20537,7 +19206,6 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     paymentMethod?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-    bonusTypeId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -20829,73 +19497,6 @@ export namespace Prisma {
     sickLeaveTotal?: IntFieldUpdateOperationsInput | number
     sickLeaveUsed?: IntFieldUpdateOperationsInput | number
     lastUpdated?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type BonusTypeCreateInput = {
-    id?: string
-    name: string
-    description?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    payments?: SalaryPaymentCreateNestedManyWithoutBonusTypeInput
-  }
-
-  export type BonusTypeUncheckedCreateInput = {
-    id?: string
-    name: string
-    description?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    payments?: SalaryPaymentUncheckedCreateNestedManyWithoutBonusTypeInput
-  }
-
-  export type BonusTypeUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    payments?: SalaryPaymentUpdateManyWithoutBonusTypeNestedInput
-  }
-
-  export type BonusTypeUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    payments?: SalaryPaymentUncheckedUpdateManyWithoutBonusTypeNestedInput
-  }
-
-  export type BonusTypeCreateManyInput = {
-    id?: string
-    name: string
-    description?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type BonusTypeUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type BonusTypeUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -21718,11 +20319,6 @@ export namespace Prisma {
     not?: NestedEnumPaymentStatusFilter<$PrismaModel> | $Enums.PaymentStatus
   }
 
-  export type BonusTypeNullableScalarRelationFilter = {
-    is?: BonusTypeWhereInput | null
-    isNot?: BonusTypeWhereInput | null
-  }
-
   export type EmployeeScalarRelationFilter = {
     is?: EmployeeWhereInput
     isNot?: EmployeeWhereInput
@@ -21739,7 +20335,6 @@ export namespace Prisma {
     notes?: SortOrder
     paymentMethod?: SortOrder
     status?: SortOrder
-    bonusTypeId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -21761,7 +20356,6 @@ export namespace Prisma {
     notes?: SortOrder
     paymentMethod?: SortOrder
     status?: SortOrder
-    bonusTypeId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -21777,7 +20371,6 @@ export namespace Prisma {
     notes?: SortOrder
     paymentMethod?: SortOrder
     status?: SortOrder
-    bonusTypeId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -21998,33 +20591,6 @@ export namespace Prisma {
     annualLeaveUsed?: SortOrder
     sickLeaveTotal?: SortOrder
     sickLeaveUsed?: SortOrder
-  }
-
-  export type BonusTypeCountOrderByAggregateInput = {
-    id?: SortOrder
-    name?: SortOrder
-    description?: SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type BonusTypeMaxOrderByAggregateInput = {
-    id?: SortOrder
-    name?: SortOrder
-    description?: SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type BonusTypeMinOrderByAggregateInput = {
-    id?: SortOrder
-    name?: SortOrder
-    description?: SortOrder
-    isActive?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
   }
 
   export type ContactCreateNestedOneWithoutInvoicesInput = {
@@ -22585,12 +21151,6 @@ export namespace Prisma {
     update?: XOR<XOR<EmployeeLeaveBalanceUpdateToOneWithWhereWithoutEmployeeInput, EmployeeLeaveBalanceUpdateWithoutEmployeeInput>, EmployeeLeaveBalanceUncheckedUpdateWithoutEmployeeInput>
   }
 
-  export type BonusTypeCreateNestedOneWithoutPaymentsInput = {
-    create?: XOR<BonusTypeCreateWithoutPaymentsInput, BonusTypeUncheckedCreateWithoutPaymentsInput>
-    connectOrCreate?: BonusTypeCreateOrConnectWithoutPaymentsInput
-    connect?: BonusTypeWhereUniqueInput
-  }
-
   export type EmployeeCreateNestedOneWithoutSalaryPaymentsInput = {
     create?: XOR<EmployeeCreateWithoutSalaryPaymentsInput, EmployeeUncheckedCreateWithoutSalaryPaymentsInput>
     connectOrCreate?: EmployeeCreateOrConnectWithoutSalaryPaymentsInput
@@ -22603,16 +21163,6 @@ export namespace Prisma {
 
   export type EnumPaymentStatusFieldUpdateOperationsInput = {
     set?: $Enums.PaymentStatus
-  }
-
-  export type BonusTypeUpdateOneWithoutPaymentsNestedInput = {
-    create?: XOR<BonusTypeCreateWithoutPaymentsInput, BonusTypeUncheckedCreateWithoutPaymentsInput>
-    connectOrCreate?: BonusTypeCreateOrConnectWithoutPaymentsInput
-    upsert?: BonusTypeUpsertWithoutPaymentsInput
-    disconnect?: BonusTypeWhereInput | boolean
-    delete?: BonusTypeWhereInput | boolean
-    connect?: BonusTypeWhereUniqueInput
-    update?: XOR<XOR<BonusTypeUpdateToOneWithWhereWithoutPaymentsInput, BonusTypeUpdateWithoutPaymentsInput>, BonusTypeUncheckedUpdateWithoutPaymentsInput>
   }
 
   export type EmployeeUpdateOneRequiredWithoutSalaryPaymentsNestedInput = {
@@ -22671,48 +21221,6 @@ export namespace Prisma {
     upsert?: EmployeeUpsertWithoutLeaveBalanceInput
     connect?: EmployeeWhereUniqueInput
     update?: XOR<XOR<EmployeeUpdateToOneWithWhereWithoutLeaveBalanceInput, EmployeeUpdateWithoutLeaveBalanceInput>, EmployeeUncheckedUpdateWithoutLeaveBalanceInput>
-  }
-
-  export type SalaryPaymentCreateNestedManyWithoutBonusTypeInput = {
-    create?: XOR<SalaryPaymentCreateWithoutBonusTypeInput, SalaryPaymentUncheckedCreateWithoutBonusTypeInput> | SalaryPaymentCreateWithoutBonusTypeInput[] | SalaryPaymentUncheckedCreateWithoutBonusTypeInput[]
-    connectOrCreate?: SalaryPaymentCreateOrConnectWithoutBonusTypeInput | SalaryPaymentCreateOrConnectWithoutBonusTypeInput[]
-    createMany?: SalaryPaymentCreateManyBonusTypeInputEnvelope
-    connect?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-  }
-
-  export type SalaryPaymentUncheckedCreateNestedManyWithoutBonusTypeInput = {
-    create?: XOR<SalaryPaymentCreateWithoutBonusTypeInput, SalaryPaymentUncheckedCreateWithoutBonusTypeInput> | SalaryPaymentCreateWithoutBonusTypeInput[] | SalaryPaymentUncheckedCreateWithoutBonusTypeInput[]
-    connectOrCreate?: SalaryPaymentCreateOrConnectWithoutBonusTypeInput | SalaryPaymentCreateOrConnectWithoutBonusTypeInput[]
-    createMany?: SalaryPaymentCreateManyBonusTypeInputEnvelope
-    connect?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-  }
-
-  export type SalaryPaymentUpdateManyWithoutBonusTypeNestedInput = {
-    create?: XOR<SalaryPaymentCreateWithoutBonusTypeInput, SalaryPaymentUncheckedCreateWithoutBonusTypeInput> | SalaryPaymentCreateWithoutBonusTypeInput[] | SalaryPaymentUncheckedCreateWithoutBonusTypeInput[]
-    connectOrCreate?: SalaryPaymentCreateOrConnectWithoutBonusTypeInput | SalaryPaymentCreateOrConnectWithoutBonusTypeInput[]
-    upsert?: SalaryPaymentUpsertWithWhereUniqueWithoutBonusTypeInput | SalaryPaymentUpsertWithWhereUniqueWithoutBonusTypeInput[]
-    createMany?: SalaryPaymentCreateManyBonusTypeInputEnvelope
-    set?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-    disconnect?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-    delete?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-    connect?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-    update?: SalaryPaymentUpdateWithWhereUniqueWithoutBonusTypeInput | SalaryPaymentUpdateWithWhereUniqueWithoutBonusTypeInput[]
-    updateMany?: SalaryPaymentUpdateManyWithWhereWithoutBonusTypeInput | SalaryPaymentUpdateManyWithWhereWithoutBonusTypeInput[]
-    deleteMany?: SalaryPaymentScalarWhereInput | SalaryPaymentScalarWhereInput[]
-  }
-
-  export type SalaryPaymentUncheckedUpdateManyWithoutBonusTypeNestedInput = {
-    create?: XOR<SalaryPaymentCreateWithoutBonusTypeInput, SalaryPaymentUncheckedCreateWithoutBonusTypeInput> | SalaryPaymentCreateWithoutBonusTypeInput[] | SalaryPaymentUncheckedCreateWithoutBonusTypeInput[]
-    connectOrCreate?: SalaryPaymentCreateOrConnectWithoutBonusTypeInput | SalaryPaymentCreateOrConnectWithoutBonusTypeInput[]
-    upsert?: SalaryPaymentUpsertWithWhereUniqueWithoutBonusTypeInput | SalaryPaymentUpsertWithWhereUniqueWithoutBonusTypeInput[]
-    createMany?: SalaryPaymentCreateManyBonusTypeInputEnvelope
-    set?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-    disconnect?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-    delete?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-    connect?: SalaryPaymentWhereUniqueInput | SalaryPaymentWhereUniqueInput[]
-    update?: SalaryPaymentUpdateWithWhereUniqueWithoutBonusTypeInput | SalaryPaymentUpdateWithWhereUniqueWithoutBonusTypeInput[]
-    updateMany?: SalaryPaymentUpdateManyWithWhereWithoutBonusTypeInput | SalaryPaymentUpdateManyWithWhereWithoutBonusTypeInput[]
-    deleteMany?: SalaryPaymentScalarWhereInput | SalaryPaymentScalarWhereInput[]
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -24128,7 +22636,6 @@ export namespace Prisma {
     status?: $Enums.PaymentStatus
     createdAt?: Date | string
     updatedAt?: Date | string
-    bonusType?: BonusTypeCreateNestedOneWithoutPaymentsInput
   }
 
   export type SalaryPaymentUncheckedCreateWithoutEmployeeInput = {
@@ -24141,7 +22648,6 @@ export namespace Prisma {
     notes?: string | null
     paymentMethod?: string | null
     status?: $Enums.PaymentStatus
-    bonusTypeId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -24289,7 +22795,6 @@ export namespace Prisma {
     notes?: StringNullableFilter<"SalaryPayment"> | string | null
     paymentMethod?: StringNullableFilter<"SalaryPayment"> | string | null
     status?: EnumPaymentStatusFilter<"SalaryPayment"> | $Enums.PaymentStatus
-    bonusTypeId?: StringNullableFilter<"SalaryPayment"> | string | null
     createdAt?: DateTimeFilter<"SalaryPayment"> | Date | string
     updatedAt?: DateTimeFilter<"SalaryPayment"> | Date | string
   }
@@ -24396,29 +22901,6 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type BonusTypeCreateWithoutPaymentsInput = {
-    id?: string
-    name: string
-    description?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type BonusTypeUncheckedCreateWithoutPaymentsInput = {
-    id?: string
-    name: string
-    description?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type BonusTypeCreateOrConnectWithoutPaymentsInput = {
-    where: BonusTypeWhereUniqueInput
-    create: XOR<BonusTypeCreateWithoutPaymentsInput, BonusTypeUncheckedCreateWithoutPaymentsInput>
-  }
-
   export type EmployeeCreateWithoutSalaryPaymentsInput = {
     id?: string
     name: string
@@ -24464,35 +22946,6 @@ export namespace Prisma {
   export type EmployeeCreateOrConnectWithoutSalaryPaymentsInput = {
     where: EmployeeWhereUniqueInput
     create: XOR<EmployeeCreateWithoutSalaryPaymentsInput, EmployeeUncheckedCreateWithoutSalaryPaymentsInput>
-  }
-
-  export type BonusTypeUpsertWithoutPaymentsInput = {
-    update: XOR<BonusTypeUpdateWithoutPaymentsInput, BonusTypeUncheckedUpdateWithoutPaymentsInput>
-    create: XOR<BonusTypeCreateWithoutPaymentsInput, BonusTypeUncheckedCreateWithoutPaymentsInput>
-    where?: BonusTypeWhereInput
-  }
-
-  export type BonusTypeUpdateToOneWithWhereWithoutPaymentsInput = {
-    where?: BonusTypeWhereInput
-    data: XOR<BonusTypeUpdateWithoutPaymentsInput, BonusTypeUncheckedUpdateWithoutPaymentsInput>
-  }
-
-  export type BonusTypeUpdateWithoutPaymentsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type BonusTypeUncheckedUpdateWithoutPaymentsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type EmployeeUpsertWithoutSalaryPaymentsInput = {
@@ -24846,62 +23299,6 @@ export namespace Prisma {
     salaryPayments?: SalaryPaymentUncheckedUpdateManyWithoutEmployeeNestedInput
     leaveRequests?: LeaveRequestUncheckedUpdateManyWithoutEmployeeNestedInput
     documents?: EmployeeDocumentUncheckedUpdateManyWithoutEmployeeNestedInput
-  }
-
-  export type SalaryPaymentCreateWithoutBonusTypeInput = {
-    id?: string
-    paymentDate: Date | string
-    amount: Decimal | DecimalJsLike | number | string
-    type?: $Enums.SalaryPaymentType
-    taxAmount?: Decimal | DecimalJsLike | number | string
-    netAmount: Decimal | DecimalJsLike | number | string
-    notes?: string | null
-    paymentMethod?: string | null
-    status?: $Enums.PaymentStatus
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    employee: EmployeeCreateNestedOneWithoutSalaryPaymentsInput
-  }
-
-  export type SalaryPaymentUncheckedCreateWithoutBonusTypeInput = {
-    id?: string
-    employeeId: string
-    paymentDate: Date | string
-    amount: Decimal | DecimalJsLike | number | string
-    type?: $Enums.SalaryPaymentType
-    taxAmount?: Decimal | DecimalJsLike | number | string
-    netAmount: Decimal | DecimalJsLike | number | string
-    notes?: string | null
-    paymentMethod?: string | null
-    status?: $Enums.PaymentStatus
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type SalaryPaymentCreateOrConnectWithoutBonusTypeInput = {
-    where: SalaryPaymentWhereUniqueInput
-    create: XOR<SalaryPaymentCreateWithoutBonusTypeInput, SalaryPaymentUncheckedCreateWithoutBonusTypeInput>
-  }
-
-  export type SalaryPaymentCreateManyBonusTypeInputEnvelope = {
-    data: SalaryPaymentCreateManyBonusTypeInput | SalaryPaymentCreateManyBonusTypeInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type SalaryPaymentUpsertWithWhereUniqueWithoutBonusTypeInput = {
-    where: SalaryPaymentWhereUniqueInput
-    update: XOR<SalaryPaymentUpdateWithoutBonusTypeInput, SalaryPaymentUncheckedUpdateWithoutBonusTypeInput>
-    create: XOR<SalaryPaymentCreateWithoutBonusTypeInput, SalaryPaymentUncheckedCreateWithoutBonusTypeInput>
-  }
-
-  export type SalaryPaymentUpdateWithWhereUniqueWithoutBonusTypeInput = {
-    where: SalaryPaymentWhereUniqueInput
-    data: XOR<SalaryPaymentUpdateWithoutBonusTypeInput, SalaryPaymentUncheckedUpdateWithoutBonusTypeInput>
-  }
-
-  export type SalaryPaymentUpdateManyWithWhereWithoutBonusTypeInput = {
-    where: SalaryPaymentScalarWhereInput
-    data: XOR<SalaryPaymentUpdateManyMutationInput, SalaryPaymentUncheckedUpdateManyWithoutBonusTypeInput>
   }
 
   export type InvoiceFileCreateManyInvoiceInput = {
@@ -25346,7 +23743,6 @@ export namespace Prisma {
     notes?: string | null
     paymentMethod?: string | null
     status?: $Enums.PaymentStatus
-    bonusTypeId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -25390,7 +23786,6 @@ export namespace Prisma {
     status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    bonusType?: BonusTypeUpdateOneWithoutPaymentsNestedInput
   }
 
   export type SalaryPaymentUncheckedUpdateWithoutEmployeeInput = {
@@ -25403,7 +23798,6 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     paymentMethod?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-    bonusTypeId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -25418,7 +23812,6 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     paymentMethod?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-    bonusTypeId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -25500,66 +23893,6 @@ export namespace Prisma {
     uploadDate?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
     notes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type SalaryPaymentCreateManyBonusTypeInput = {
-    id?: string
-    employeeId: string
-    paymentDate: Date | string
-    amount: Decimal | DecimalJsLike | number | string
-    type?: $Enums.SalaryPaymentType
-    taxAmount?: Decimal | DecimalJsLike | number | string
-    netAmount: Decimal | DecimalJsLike | number | string
-    notes?: string | null
-    paymentMethod?: string | null
-    status?: $Enums.PaymentStatus
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type SalaryPaymentUpdateWithoutBonusTypeInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    paymentDate?: DateTimeFieldUpdateOperationsInput | Date | string
-    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    type?: EnumSalaryPaymentTypeFieldUpdateOperationsInput | $Enums.SalaryPaymentType
-    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    netAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    paymentMethod?: NullableStringFieldUpdateOperationsInput | string | null
-    status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    employee?: EmployeeUpdateOneRequiredWithoutSalaryPaymentsNestedInput
-  }
-
-  export type SalaryPaymentUncheckedUpdateWithoutBonusTypeInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    employeeId?: StringFieldUpdateOperationsInput | string
-    paymentDate?: DateTimeFieldUpdateOperationsInput | Date | string
-    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    type?: EnumSalaryPaymentTypeFieldUpdateOperationsInput | $Enums.SalaryPaymentType
-    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    netAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    paymentMethod?: NullableStringFieldUpdateOperationsInput | string | null
-    status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type SalaryPaymentUncheckedUpdateManyWithoutBonusTypeInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    employeeId?: StringFieldUpdateOperationsInput | string
-    paymentDate?: DateTimeFieldUpdateOperationsInput | Date | string
-    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    type?: EnumSalaryPaymentTypeFieldUpdateOperationsInput | $Enums.SalaryPaymentType
-    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    netAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    paymentMethod?: NullableStringFieldUpdateOperationsInput | string | null
-    status?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

@@ -2,7 +2,7 @@
 // Burada kendi veritabanı türünüze göre bağlantı kodunu ayarlayabilirsiniz
 // Örnek olarak, yaygın kullanılan Prisma ORM kullanımını gösteriyorum
 
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 // PrismaClient instance global olarak tutulur
 // Bu, hot reload sırasında birden fazla bağlantı oluşturulmasını önler

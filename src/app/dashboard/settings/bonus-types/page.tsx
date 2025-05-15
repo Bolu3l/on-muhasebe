@@ -6,9 +6,11 @@ import Link from "next/link";
 interface BonusType {
   id: string;
   name: string;
-  description: string | null;
+  code: string;
+  isDefault: boolean;
   isActive: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export default function BonusTypesPage() {
@@ -16,214 +18,213 @@ export default function BonusTypesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const [showAddForm, setShowAddForm] = useState(false);
+  // Form durumları
+  const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
-    isActive: true
+    code: ""
   });
-  
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [statusChanged, setStatusChanged] = useState(false);
   
-  // Prim türlerini getir
-  useEffect(() => {
-    const fetchBonusTypes = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await fetch('/api/bonus-types');
-        
-        if (!response.ok) {
-          throw new Error('Prim türleri getirilemedi');
-        }
-        
-        const data = await response.json();
-        setBonusTypes(data);
-      } catch (err) {
-        console.error('Prim türlerini getirme hatası:', err);
-        setError('Prim türleri yüklenirken bir hata oluştu');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchBonusTypes();
-  }, [statusChanged]);
-  
-  // Form alanlarını değiştir
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    });
-  };
-  
-  // Yeni prim türü ekle
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    
+  // Prim tiplerini getir
+  const fetchBonusTypes = async () => {
     try {
-      const url = editingId 
-        ? `/api/bonus-types/${editingId}`
-        : '/api/bonus-types';
-        
-      const method = editingId ? 'PATCH' : 'POST';
+      setLoading(true);
+      setError(null);
       
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-      
-      const data = await response.json();
+      const response = await fetch('/api/bonus-types');
       
       if (!response.ok) {
-        throw new Error(data.error || 'Prim türü kaydedilemedi');
+        throw new Error('Prim tipleri getirilemedi');
       }
       
-      // Başarılı kayıt sonrası listeyi güncelle
-      setStatusChanged(!statusChanged);
-      
-      // Formu sıfırla
-      setFormData({
-        name: "",
-        description: "",
-        isActive: true
-      });
-      
-      setShowAddForm(false);
-      setEditingId(null);
-      
+      const data = await response.json();
+      setBonusTypes(data);
     } catch (err) {
-      console.error('Prim türü kaydetme hatası:', err);
-      setError((err as Error).message || 'Prim türü kaydedilemedi');
+      console.error('Prim tipleri getirilirken hata:', err);
+      setError('Prim tipleri yüklenirken bir hata oluştu');
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
   
-  // Prim türünü düzenlemeye başla
-  const handleEdit = (bonusType: BonusType) => {
-    setFormData({
-      name: bonusType.name,
-      description: bonusType.description || "",
-      isActive: bonusType.isActive
-    });
-    setEditingId(bonusType.id);
-    setShowAddForm(true);
-  };
+  // Sayfa yüklendiğinde prim tiplerini getir
+  useEffect(() => {
+    fetchBonusTypes();
+  }, []);
   
-  // Prim türünün durumunu değiştir (aktif/pasif)
-  const toggleStatus = async (id: string, currentStatus: boolean) => {
+  // Prim tipinin durumunu değiştir (aktif/pasif)
+  const toggleBonusTypeStatus = async (id: string, currentStatus: boolean) => {
     try {
       const response = await fetch(`/api/bonus-types/${id}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          isActive: !currentStatus
-        })
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
       
       if (!response.ok) {
-        throw new Error('Durum değiştirilemedi');
+        throw new Error('Prim tipi durumu güncellenemedi');
       }
       
       // Listeyi güncelle
-      setStatusChanged(!statusChanged);
+      setBonusTypes(bonusTypes.map(type => 
+        type.id === id ? { ...type, isActive: !currentStatus } : type
+      ));
       
     } catch (err) {
-      console.error('Durum değiştirme hatası:', err);
-      setError('Durum değiştirilirken bir hata oluştu');
+      console.error('Prim tipi durumu güncellenirken hata:', err);
+      setError('Prim tipi durumu güncellenirken bir hata oluştu');
     }
   };
   
-  // Prim türünü sil
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Bu prim türünü silmek istediğinize emin misiniz?')) {
+  // Prim tipini sil
+  const deleteBonusType = async (id: string) => {
+    if (!confirm('Bu prim tipini silmek istediğinizden emin misiniz?')) {
       return;
     }
     
     try {
       const response = await fetch(`/api/bonus-types/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Prim tipi silinemedi');
+      }
+      
+      // Listeden kaldır
+      setBonusTypes(bonusTypes.filter(type => type.id !== id));
+      
+    } catch (err) {
+      console.error('Prim tipi silinirken hata:', err);
+      alert(err instanceof Error ? err.message : 'Prim tipi silinirken bir hata oluştu');
+    }
+  };
+  
+  // Form alanlarını değiştir
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    // Kod için otomatik dönüşüm (boşlukları altçizgiye dönüştür ve büyük harfe çevir)
+    if (name === 'code') {
+      const formattedCode = value.replace(/\s+/g, '_').toUpperCase();
+      setFormData({
+        ...formData,
+        [name]: formattedCode
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+  };
+  
+  // Formu gönder
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setFormSuccess(null);
+    setSaving(true);
+    
+    try {
+      // Form doğrulama
+      if (!formData.name.trim()) {
+        throw new Error('Prim tipi adı boş olamaz');
+      }
+      
+      if (!formData.code.trim()) {
+        throw new Error('Prim tipi kodu boş olamaz');
+      }
+      
+      // API'ye gönder
+      const response = await fetch('/api/bonus-types', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
       
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Prim türü silinemedi');
+        throw new Error(data.error || 'Prim tipi eklenirken bir hata oluştu');
       }
+      
+      // Başarılı
+      setFormSuccess('Prim tipi başarıyla eklendi');
+      setFormData({ name: "", code: "" });
       
       // Listeyi güncelle
-      setStatusChanged(!statusChanged);
+      setBonusTypes([...bonusTypes, data]);
       
-      // Eğer silinen, düzenlenmekte olan kayıtsa formu sıfırla
-      if (editingId === id) {
-        setFormData({
-          name: "",
-          description: "",
-          isActive: true
-        });
-        setEditingId(null);
-        setShowAddForm(false);
-      }
+      // Formu kapat
+      setTimeout(() => {
+        setShowForm(false);
+        setFormSuccess(null);
+      }, 2000);
       
     } catch (err) {
-      console.error('Prim türü silme hatası:', err);
-      setError((err as Error).message || 'Prim türü silinemedi');
+      console.error('Prim tipi eklenirken hata:', err);
+      setFormError(err instanceof Error ? err.message : 'Prim tipi eklenirken bir hata oluştu');
+    } finally {
+      setSaving(false);
     }
   };
   
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Prim Türleri</h1>
-        <button 
-          onClick={() => {
-            setShowAddForm(!showAddForm);
-            if (!showAddForm) {
-              setFormData({
-                name: "",
-                description: "",
-                isActive: true
-              });
-              setEditingId(null);
-            }
-          }}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Prim Tipleri Yönetimi</h1>
+        <button
+          onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
         >
-          {showAddForm ? 'İptal' : 'Yeni Prim Türü Ekle'}
+          {showForm ? 'İptal' : 'Yeni Prim Tipi Ekle'}
         </button>
       </div>
       
-      {/* Hata mesajı */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <span className="block sm:inline">{error}</span>
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+          <p>{error}</p>
         </div>
       )}
       
-      {/* Prim türü ekleme/düzenleme formu */}
-      {showAddForm && (
+      {/* Yeni Prim Tipi Ekleme Formu */}
+      {showForm && (
         <div className="bg-white dark:bg-dark-card shadow-sm rounded-lg p-6 border border-gray-200 dark:border-dark-border">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            {editingId ? 'Prim Türünü Düzenle' : 'Yeni Prim Türü Ekle'}
-          </h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Yeni Prim Tipi Ekle</h2>
+          
+          {formError && (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+              <p>{formError}</p>
+            </div>
+          )}
+          
+          {formSuccess && (
+            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+              <p>{formSuccess}</p>
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Prim Türü Adı <span className="text-red-500">*</span>
+                Prim Tipi Adı <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -231,144 +232,124 @@ export default function BonusTypesPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                placeholder="Örnek: Proje Tamamlama Primi"
                 required
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-dark-card dark:text-white"
-                placeholder="Örn: Satış Primi, Yıl Sonu Primi"
               />
             </div>
             
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Açıklama
+              <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Prim Tipi Kodu <span className="text-red-500">*</span>
               </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-dark-card dark:text-white"
-                placeholder="Bu prim türü hakkında açıklama"
-              ></textarea>
-            </div>
-            
-            <div className="flex items-center">
               <input
-                type="checkbox"
-                id="isActive"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                type="text"
+                id="code"
+                name="code"
+                value={formData.code}
+                onChange={handleChange}
+                placeholder="Örnek: PROJECT_COMPLETION"
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-dark-card dark:text-white"
               />
-              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                Aktif
-              </label>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Boşluklar otomatik olarak altçizgi (_) ile değiştirilir ve büyük harfe çevrilir.
+              </p>
             </div>
             
             <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium disabled:opacity-50"
+                className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium ${
+                  saving ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
               >
-                {saving ? 'Kaydediliyor...' : (editingId ? 'Güncelle' : 'Ekle')}
+                {saving ? 'Kaydediliyor...' : 'Prim Tipini Kaydet'}
               </button>
             </div>
           </form>
         </div>
       )}
       
-      {/* Prim türleri listesi */}
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : bonusTypes.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-dark-card shadow-sm rounded-lg border border-gray-200 dark:border-dark-border">
-          <p className="text-gray-500 dark:text-gray-400">Henüz prim türü eklenmemiş</p>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
-          >
-            Yeni Prim Türü Ekle
-          </button>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-dark-card shadow-sm rounded-lg border border-gray-200 dark:border-dark-border overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Prim Türü
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Açıklama
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Durum
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  İşlemler
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-dark-card divide-y divide-gray-200 dark:divide-gray-700">
-              {bonusTypes.map((bonusType) => (
+      {/* Prim Tipleri Listesi */}
+      <div className="bg-white dark:bg-dark-card shadow-sm rounded-lg overflow-hidden border border-gray-200 dark:border-dark-border">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-border">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Prim Tipi
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Kod
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Durum
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                İşlemler
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-dark-card divide-y divide-gray-200 dark:divide-dark-border">
+            {bonusTypes.length > 0 ? (
+              bonusTypes.map((bonusType) => (
                 <tr key={bonusType.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{bonusType.name}</div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {bonusType.name}
+                    {bonusType.isDefault && (
+                      <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        Varsayılan
+                      </span>
+                    )}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{bonusType.description || '-'}</div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {bonusType.code}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span 
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        bonusType.isActive 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}
-                    >
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      bonusType.isActive
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    }`}>
                       {bonusType.isActive ? 'Aktif' : 'Pasif'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => toggleBonusTypeStatus(bonusType.id, bonusType.isActive)}
+                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3"
+                    >
+                      {bonusType.isActive ? 'Pasif Yap' : 'Aktif Yap'}
+                    </button>
+                    {!bonusType.isDefault && (
                       <button
-                        onClick={() => toggleStatus(bonusType.id, bonusType.isActive)}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                      >
-                        {bonusType.isActive ? 'Pasif Yap' : 'Aktif Yap'}
-                      </button>
-                      <button
-                        onClick={() => handleEdit(bonusType)}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                      >
-                        Düzenle
-                      </button>
-                      <button
-                        onClick={() => handleDelete(bonusType.id)}
+                        onClick={() => deleteBonusType(bonusType.id)}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                       >
                         Sil
                       </button>
-                    </div>
+                    )}
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Henüz prim tipi bulunmuyor
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       
-      {/* Ayarlar sayfasına geri dön linki */}
       <div className="mt-6">
         <Link 
-          href="/dashboard/settings"
-          className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+          href="/dashboard/settings" 
+          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
         >
-          &larr; Ayarlar'a Geri Dön
+          ← Ayarlar Sayfasına Dön
         </Link>
       </div>
     </div>

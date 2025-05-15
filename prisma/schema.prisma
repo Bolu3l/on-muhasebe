@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -165,8 +164,6 @@ model SalaryPayment {
   notes          String?
   paymentMethod  String?
   status         PaymentStatus    @default(PAID)
-  bonusTypeId    String?
-  bonusType      BonusType?       @relation(fields: [bonusTypeId], references: [id])
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   employee       Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
@@ -229,18 +226,9 @@ enum SalaryPaymentType {
   BONUS
   ALLOWANCE
   ADVANCE
+  CUSTOMER_SATISFACTION
+  SALES
   OTHER
-}
-
-// Özel Prim Türleri için model
-model BonusType {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  payments    SalaryPayment[]
 }
 
 enum PaymentStatus {
@@ -264,4 +252,15 @@ enum LeaveStatus {
   APPROVED
   REJECTED
   CANCELLED
+}
+
+// Özel Prim Tipleri İçin Model
+model BonusType {
+  id        String   @id @default(cuid())
+  name      String   // Prim tipi adı (örn: "Müşteri Memnuniyeti")
+  code      String   // Sistem kodu (örn: "CUSTOMER_SATISFACTION")
+  isDefault Boolean  @default(false) // Varsayılan sistem prim tipi mi?
+  isActive  Boolean  @default(true)  // Aktif mi?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

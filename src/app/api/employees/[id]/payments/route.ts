@@ -48,14 +48,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     // Ödemeleri getir
     const payments = await prisma.salaryPayment.findMany({
       where,
-      include: {
-        bonusType: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
       orderBy: {
         paymentDate: 'desc'
       }

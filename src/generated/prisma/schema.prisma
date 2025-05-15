@@ -165,8 +165,6 @@ model SalaryPayment {
   notes         String?
   paymentMethod String?
   status        PaymentStatus     @default(PAID)
-  bonusTypeId   String?
-  bonusType     BonusType?        @relation(fields: [bonusTypeId], references: [id])
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   employee      Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
@@ -230,17 +228,6 @@ enum SalaryPaymentType {
   ALLOWANCE
   ADVANCE
   OTHER
-}
-
-// Özel Prim Türleri için model
-model BonusType {
-  id          String          @id @default(cuid())
-  name        String
-  description String?
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  payments    SalaryPayment[]
 }
 
 enum PaymentStatus {

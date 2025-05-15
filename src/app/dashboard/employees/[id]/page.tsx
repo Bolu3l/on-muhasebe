@@ -30,10 +30,6 @@ interface SalaryPayment {
   status: string;
   type: string;
   notes?: string | null;
-  bonusType?: {
-    id: string;
-    name: string;
-  } | null;
 }
 
 interface LeaveRequest {
@@ -55,6 +51,14 @@ interface LeaveBalance {
   sickLeaveRemaining: number;
 }
 
+interface BonusType {
+  id: string;
+  name: string;
+  code: string;
+  isDefault: boolean;
+  isActive: boolean;
+}
+
 export default function EmployeeDetail() {
   const router = useRouter();
   const params = useParams();
@@ -62,12 +66,26 @@ export default function EmployeeDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance | null>(null);
+  const [bonusTypes, setBonusTypes] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const fetchEmployee = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
+        
+        // Prim tiplerini getir
+        const bonusTypesResponse = await fetch('/api/bonus-types');
+        
+        if (bonusTypesResponse.ok) {
+          const bonusTypesData = await bonusTypesResponse.json();
+          // Kod -> isim eşleştirmesi yap
+          const bonusTypesMap: Record<string, string> = {};
+          bonusTypesData.forEach((type: BonusType) => {
+            bonusTypesMap[type.code] = type.name;
+          });
+          setBonusTypes(bonusTypesMap);
+        }
         
         if (!params || !params.id) {
           setError('Personel ID bilgisi bulunamadı');
@@ -102,7 +120,7 @@ export default function EmployeeDetail() {
       }
     };
     
-    fetchEmployee();
+    fetchData();
   }, [params]);
 
   // İzin bakiyesi hesaplama fonksiyonu
@@ -311,14 +329,10 @@ export default function EmployeeDetail() {
                         </td>
                         <td className="py-3 text-sm text-gray-700 dark:text-gray-300">
                           {payment.type === 'SALARY' && 'Maaş'}
-                          {payment.type === 'BONUS' && (
-                            payment.bonusType 
-                              ? `Prim (${payment.bonusType.name})` 
-                              : 'Prim'
-                          )}
                           {payment.type === 'ALLOWANCE' && 'Ödenek'}
                           {payment.type === 'ADVANCE' && 'Avans'}
                           {payment.type === 'OTHER' && 'Diğer'}
+                          {bonusTypes[payment.type] && bonusTypes[payment.type]}
                         </td>
                         <td className="py-3 text-sm text-gray-700 dark:text-gray-300">{payment.description || payment.notes || '-'}</td>
                         <td className="py-3 text-sm font-medium text-gray-900 dark:text-white">

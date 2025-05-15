@@ -1,78 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// GET - Tüm prim türlerini getir
+// GET - Tüm prim tiplerini listele
 export async function GET(req: NextRequest) {
   try {
+    // URL'den aktiflik filtresi al
     const url = new URL(req.url);
     const onlyActive = url.searchParams.get("active") === "true";
     
-    // Filtreleme koşulları
-    const where: any = {};
-    
-    if (onlyActive) {
-      where.isActive = true;
-    }
-    
-    // Prim türlerini getir
+    // Prim tiplerini getir
     const bonusTypes = await prisma.bonusType.findMany({
-      where,
-      orderBy: {
+      where: onlyActive ? { isActive: true } : {},
+      orderBy: { 
         name: 'asc'
-      }
+      },
     });
     
     return NextResponse.json(bonusTypes);
   } catch (error) {
-    console.error("Prim türleri getirilirken hata:", error);
+    console.error("Prim tipleri getirilirken hata:", error);
     return NextResponse.json(
-      { error: "Prim türleri getirilirken bir hata oluştu" },
+      { error: "Prim tipleri getirilirken bir hata oluştu" },
       { status: 500 }
     );
   }
 }
 
-// POST - Yeni prim türü ekle
+// POST - Yeni prim tipi ekle
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     
-    // Zorunlu alanları kontrol et
-    if (!body.name) {
+    // Gerekli alanların kontrolü
+    if (!body.name || !body.code) {
       return NextResponse.json(
-        { error: "Prim türü adı zorunlu bir alandır" },
+        { error: "Ad ve kod alanları zorunludur" },
         { status: 400 }
       );
     }
     
-    // Aynı isimde prim türü var mı kontrol et
-    const existingBonusType = await prisma.bonusType.findFirst({
-      where: {
-        name: body.name
-      }
+    // Aynı kodla başka bir prim tipi var mı kontrol et
+    const existingType = await prisma.bonusType.findFirst({
+      where: { code: body.code },
     });
     
-    if (existingBonusType) {
+    if (existingType) {
       return NextResponse.json(
-        { error: "Bu isimde bir prim türü zaten mevcut" },
+        { error: `'${body.code}' kodu ile bir prim tipi zaten mevcut` },
         { status: 400 }
       );
     }
     
-    // Yeni prim türü oluştur
-    const bonusType = await prisma.bonusType.create({
+    // Yeni prim tipi oluştur
+    const newBonusType = await prisma.bonusType.create({
       data: {
         name: body.name,
-        description: body.description || null,
-        isActive: body.isActive !== undefined ? Boolean(body.isActive) : true
-      }
+        code: body.code,
+        isDefault: false, // Kullanıcı tarafından eklenenler varsayılan olamaz
+        isActive: true,
+      },
     });
     
-    return NextResponse.json(bonusType, { status: 201 });
+    return NextResponse.json(newBonusType, { status: 201 });
   } catch (error) {
-    console.error("Prim türü eklenirken hata:", error);
+    console.error("Prim tipi eklenirken hata:", error);
     return NextResponse.json(
-      { error: "Prim türü eklenirken bir hata oluştu" },
+      { error: "Prim tipi eklenirken bir hata oluştu" },
       { status: 500 }
     );
   }

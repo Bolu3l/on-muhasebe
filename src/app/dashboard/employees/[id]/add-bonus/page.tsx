@@ -15,7 +15,8 @@ interface Employee {
 interface BonusType {
   id: string;
   name: string;
-  description: string | null;
+  code: string;
+  isDefault: boolean;
   isActive: boolean;
 }
 
@@ -25,11 +26,12 @@ export default function AddEmployeeBonus() {
   const employeeId = params?.id as string;
 
   const [employee, setEmployee] = useState<Employee | null>(null);
-  const [bonusTypes, setBonusTypes] = useState<BonusType[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [bonusTypes, setBonusTypes] = useState<BonusType[]>([]);
+  const [loadingBonusTypes, setLoadingBonusTypes] = useState(true);
 
   // Form durumları
   const [formData, setFormData] = useState({
@@ -37,7 +39,7 @@ export default function AddEmployeeBonus() {
     paymentDate: new Date().toISOString().split('T')[0],
     description: "",
     paymentMethod: "bank_transfer",
-    bonusTypeId: ""
+    bonusType: "" // Boş başlat, bonus türleri yüklenince ilk değeri atanacak
   });
 
   // Ödeme yöntemleri
@@ -47,10 +49,38 @@ export default function AddEmployeeBonus() {
     { value: "check", label: "Çek" },
     { value: "other", label: "Diğer" }
   ];
+  
+  // Prim tiplerini getir
+  const fetchBonusTypes = async () => {
+    try {
+      setLoadingBonusTypes(true);
+      
+      const response = await fetch('/api/bonus-types?active=true');
+      
+      if (!response.ok) {
+        throw new Error('Prim tipleri getirilemedi');
+      }
+      
+      const data = await response.json();
+      setBonusTypes(data);
+      
+      // İlk aktif prim tipini varsayılan olarak seç
+      if (data.length > 0) {
+        setFormData(prevData => ({
+          ...prevData,
+          bonusType: data[0].code
+        }));
+      }
+    } catch (err) {
+      console.error('Prim tipleri getirilirken hata:', err);
+    } finally {
+      setLoadingBonusTypes(false);
+    }
+  };
 
-  // Çalışan ve prim türlerini getir
+  // Çalışan bilgilerini getir
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchEmployee = async () => {
       try {
         setLoading(true);
         
@@ -59,40 +89,29 @@ export default function AddEmployeeBonus() {
           return;
         }
         
-        // Çalışan bilgilerini getir
-        const employeeResponse = await fetch(`/api/employees/${employeeId}`);
+        const response = await fetch(`/api/employees/${employeeId}`);
         
-        if (employeeResponse.status === 404) {
+        if (response.status === 404) {
           setError("Çalışan bulunamadı");
           return;
         }
         
-        if (!employeeResponse.ok) {
+        if (!response.ok) {
           throw new Error("Çalışan bilgileri getirilemedi");
         }
         
-        const employeeData = await employeeResponse.json();
-        setEmployee(employeeData);
-        
-        // Aktif prim türlerini getir
-        const bonusTypesResponse = await fetch('/api/bonus-types?active=true');
-        
-        if (!bonusTypesResponse.ok) {
-          throw new Error("Prim türleri getirilemedi");
-        }
-        
-        const bonusTypesData = await bonusTypesResponse.json();
-        setBonusTypes(bonusTypesData);
-        
+        const data = await response.json();
+        setEmployee(data);
       } catch (err) {
-        console.error("Veri getirme hatası:", err);
-        setError("Veriler yüklenirken bir hata oluştu");
+        console.error("Çalışan verilerini getirme hatası:", err);
+        setError("Çalışan bilgileri yüklenirken bir hata oluştu");
       } finally {
         setLoading(false);
       }
     };
     
-    fetchData();
+    fetchEmployee();
+    fetchBonusTypes(); // Prim tiplerini getir
   }, [employeeId]);
 
   // Form alanı değişikliklerini işle
@@ -118,6 +137,11 @@ export default function AddEmployeeBonus() {
         throw new Error("Geçerli bir prim miktarı girmelisiniz");
       }
       
+      // Prim tipini doğrula
+      if (!formData.bonusType) {
+        throw new Error("Lütfen bir prim tipi seçin");
+      }
+      
       // API'ye prim ödemesi gönder
       const response = await fetch(`/api/employees/${employeeId}/payments`, {
         method: 'POST',
@@ -127,9 +151,8 @@ export default function AddEmployeeBonus() {
         body: JSON.stringify({
           ...formData,
           amount,
-          type: "BONUS", // Prim ödemesi olduğunu belirt
-          status: "PAID",  // Otomatik olarak ödenmiş kabul et
-          bonusTypeId: formData.bonusTypeId || null // Prim türü ID'si
+          type: formData.bonusType, // Seçilen prim tipi
+          status: "PAID"  // Otomatik olarak ödenmiş kabul et
         }),
       });
       
@@ -147,7 +170,7 @@ export default function AddEmployeeBonus() {
         paymentDate: new Date().toISOString().split('T')[0],
         description: "",
         paymentMethod: "bank_transfer",
-        bonusTypeId: ""
+        bonusType: bonusTypes.length > 0 ? bonusTypes[0].code : ""
       });
       
       // 2 saniye sonra personel detay sayfasına yönlendir
@@ -264,32 +287,6 @@ export default function AddEmployeeBonus() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            {/* Prim Türü */}
-            <div>
-              <label htmlFor="bonusTypeId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Prim Türü <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="bonusTypeId"
-                name="bonusTypeId"
-                value={formData.bonusTypeId}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-dark-card dark:text-white"
-              >
-                <option value="">Seçiniz</option>
-                {bonusTypes.map(type => (
-                  <option key={type.id} value={type.id}>{type.name}</option>
-                ))}
-                <option value="other">Diğer</option>
-              </select>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                <Link href="/dashboard/settings/bonus-types" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                  Prim türlerini yönet &rarr;
-                </Link>
-              </p>
-            </div>
-
             {/* Ödeme Tarihi */}
             <div>
               <label htmlFor="paymentDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -305,9 +302,7 @@ export default function AddEmployeeBonus() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-dark-card dark:text-white"
               />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            
             {/* Ödeme Yöntemi */}
             <div>
               <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -326,6 +321,49 @@ export default function AddEmployeeBonus() {
                 ))}
               </select>
             </div>
+          </div>
+          
+          {/* Prim Tipi */}
+          <div className="mt-4">
+            <label htmlFor="bonusType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Prim Tipi <span className="text-red-500">*</span>
+            </label>
+            {loadingBonusTypes ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500 mr-2"></div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Prim tipleri yükleniyor...</span>
+              </div>
+            ) : (
+              <div>
+                <select
+                  id="bonusType"
+                  name="bonusType"
+                  value={formData.bonusType}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-dark-card dark:text-white"
+                >
+                  {bonusTypes.length > 0 ? (
+                    bonusTypes.map(type => (
+                      <option key={type.id} value={type.code}>{type.name}</option>
+                    ))
+                  ) : (
+                    <option value="" disabled>Prim tipi bulunamadı</option>
+                  )}
+                </select>
+                <div className="mt-2 flex justify-between">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {bonusTypes.length === 0 ? 'Henüz prim tipi bulunmuyor.' : ''}
+                  </p>
+                  <Link
+                    href="/dashboard/settings/bonus-types"
+                    className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  >
+                    Prim Tiplerini Yönet
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Açıklama */}
