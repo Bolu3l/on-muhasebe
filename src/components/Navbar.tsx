@@ -3,7 +3,7 @@
 import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
 import { usePathname } from "next/navigation";
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useState, useRef, useEffect } from "react";
 
 interface NavbarProps {
   userName: string;
@@ -13,6 +13,22 @@ interface NavbarProps {
 
 export default function Navbar({ userName, isSidebarOpen, setIsSidebarOpen }: NavbarProps) {
   const pathname = usePathname() || '';
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Menü dışına tıklandığında menüyü kapat
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
@@ -88,12 +104,65 @@ export default function Navbar({ userName, isSidebarOpen, setIsSidebarOpen }: Na
           {/* Tema değiştirme butonu */}
           <ThemeToggle />
           
-          {/* Kullanıcı avatarı */}
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-blue-500 dark:bg-blue-600 text-white flex items-center justify-center text-sm mr-2">
-              {userName.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{userName} Kullanıcı</span>
+          {/* Kullanıcı avatarı ve dropdown menü */}
+          <div className="relative" ref={userMenuRef}>
+            <button 
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="flex items-center space-x-2 focus:outline-none"
+            >
+              <div className="w-8 h-8 rounded-full bg-blue-500 dark:bg-blue-600 text-white flex items-center justify-center text-sm">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{userName} Kullanıcı</span>
+              
+              {/* Dropdown oku */}
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {/* Dropdown menüsü */}
+            {userMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-card rounded-md shadow-lg z-50 border border-gray-100 dark:border-gray-700">
+                <div className="py-1">
+                  <Link 
+                    href="/dashboard/settings" 
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Ayarlar
+                  </Link>
+                  <Link 
+                    href="/dashboard/settings/bonus-types" 
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Prim Tipleri
+                  </Link>
+                  <Link 
+                    href="#" 
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 opacity-60"
+                    onClick={(e) => { e.preventDefault(); setUserMenuOpen(false); }}
+                  >
+                    Profil (Yakında)
+                  </Link>
+                  <hr className="my-1 border-gray-200 dark:border-gray-700" />
+                  <Link 
+                    href="/login" 
+                    className="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Çıkış Yap
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>

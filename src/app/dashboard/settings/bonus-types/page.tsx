@@ -28,6 +28,11 @@ export default function BonusTypesPage() {
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   
+  // Silme dialogu durumları
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<BonusType | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  
   // Prim tiplerini getir
   const fetchBonusTypes = async () => {
     try {
@@ -41,7 +46,19 @@ export default function BonusTypesPage() {
       }
       
       const data = await response.json();
-      setBonusTypes(data);
+      
+      // Prim tiplerini sırala: önce özel tipler (varsayılan olmayanlar), sonra varsayılanlar
+      // Her grup kendi içinde alfabetik olarak sıralanır
+      const sortedData = data.sort((a: BonusType, b: BonusType) => {
+        // Önce varsayılan/özel durumuna göre sırala
+        if (a.isDefault !== b.isDefault) {
+          return a.isDefault ? 1 : -1; // Varsayılan olmayanlar (özel tipler) önce
+        }
+        // Sonra ada göre alfabetik sırala
+        return a.name.localeCompare(b.name, 'tr');
+      });
+      
+      setBonusTypes(sortedData);
     } catch (err) {
       console.error('Prim tipleri getirilirken hata:', err);
       setError('Prim tipleri yüklenirken bir hata oluştu');
@@ -81,14 +98,25 @@ export default function BonusTypesPage() {
     }
   };
   
+  // Silme onay modalını göster
+  const openDeleteModal = (bonusType: BonusType) => {
+    setDeleteTarget(bonusType);
+    setShowDeleteModal(true);
+  };
+  
+  // Silme modalını kapat
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeleteTarget(null);
+  };
+  
   // Prim tipini sil
-  const deleteBonusType = async (id: string) => {
-    if (!confirm('Bu prim tipini silmek istediğinizden emin misiniz?')) {
-      return;
-    }
+  const deleteBonusType = async () => {
+    if (!deleteTarget) return;
     
     try {
-      const response = await fetch(`/api/bonus-types/${id}`, {
+      setDeleting(true);
+      const response = await fetch(`/api/bonus-types/${deleteTarget.id}`, {
         method: 'DELETE',
       });
       
@@ -98,11 +126,28 @@ export default function BonusTypesPage() {
       }
       
       // Listeden kaldır
-      setBonusTypes(bonusTypes.filter(type => type.id !== id));
+      setBonusTypes(bonusTypes.filter(type => type.id !== deleteTarget.id));
+      
+      // Başarı mesajı göster ve modalı kapat
+      setFormSuccess(`"${deleteTarget.name}" başarıyla silindi`);
+      closeDeleteModal();
+      
+      // 3 saniye sonra başarı mesajını temizle
+      setTimeout(() => {
+        setFormSuccess(null);
+      }, 3000);
       
     } catch (err) {
       console.error('Prim tipi silinirken hata:', err);
-      alert(err instanceof Error ? err.message : 'Prim tipi silinirken bir hata oluştu');
+      setFormError(err instanceof Error ? err.message : 'Prim tipi silinirken bir hata oluştu');
+      closeDeleteModal();
+      
+      // 3 saniye sonra hata mesajını temizle
+      setTimeout(() => {
+        setFormError(null);
+      }, 3000);
+    } finally {
+      setDeleting(false);
     }
   };
   
@@ -161,8 +206,8 @@ export default function BonusTypesPage() {
       setFormSuccess('Prim tipi başarıyla eklendi');
       setFormData({ name: "", code: "" });
       
-      // Listeyi güncelle
-      setBonusTypes([...bonusTypes, data]);
+      // Listeyi güncelle - yeni eklenen öğe en üstte görünsün
+      setBonusTypes([data, ...bonusTypes]);
       
       // Formu kapat
       setTimeout(() => {
@@ -204,22 +249,22 @@ export default function BonusTypesPage() {
         </div>
       )}
       
+      {formSuccess && (
+        <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4" role="alert">
+          <p>{formSuccess}</p>
+        </div>
+      )}
+      
+      {formError && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+          <p>{formError}</p>
+        </div>
+      )}
+      
       {/* Yeni Prim Tipi Ekleme Formu */}
       {showForm && (
         <div className="bg-white dark:bg-dark-card shadow-sm rounded-lg p-6 border border-gray-200 dark:border-dark-border">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Yeni Prim Tipi Ekle</h2>
-          
-          {formError && (
-            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
-              <p>{formError}</p>
-            </div>
-          )}
-          
-          {formSuccess && (
-            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
-              <p>{formSuccess}</p>
-            </div>
-          )}
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -324,8 +369,8 @@ export default function BonusTypesPage() {
                     </button>
                     {!bonusType.isDefault && (
                       <button
-                        onClick={() => deleteBonusType(bonusType.id)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        onClick={() => openDeleteModal(bonusType)}
+                        className="px-2 py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded mr-1 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                       >
                         Sil
                       </button>
@@ -352,6 +397,36 @@ export default function BonusTypesPage() {
           ← Ayarlar Sayfasına Dön
         </Link>
       </div>
+      
+      {/* Silme Onay Modalı */}
+      {showDeleteModal && deleteTarget && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-dark-card rounded-lg shadow-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Prim Tipini Sil</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+              <strong>"{deleteTarget.name}"</strong> prim tipini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </p>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={closeDeleteModal}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium"
+              >
+                İptal
+              </button>
+              <button
+                onClick={deleteBonusType}
+                disabled={deleting}
+                className={`px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium ${
+                  deleting ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+              >
+                {deleting ? 'Siliniyor...' : 'Evet, Sil'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

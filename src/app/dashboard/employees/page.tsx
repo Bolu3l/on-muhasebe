@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { formatCurrency } from "@/lib/utils";
 
 interface Employee {
   id: string;
@@ -95,13 +96,13 @@ export default function EmployeesPage() {
             
             <div className="bg-white dark:bg-dark-card shadow-sm rounded-lg p-6 border border-gray-200 dark:border-dark-border">
               <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Aylık Toplam Maaş</h2>
-              <p className="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">₺{totalSalary.toLocaleString()}</p>
+              <p className="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">{formatCurrency(totalSalary)}</p>
             </div>
             
             <div className="bg-white dark:bg-dark-card shadow-sm rounded-lg p-6 border border-gray-200 dark:border-dark-border">
               <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Ortalama Maaş</h2>
               <p className="mt-2 text-3xl font-bold text-blue-600 dark:text-blue-400">
-                ₺{filteredEmployees.length ? Math.round(totalSalary / filteredEmployees.length).toLocaleString() : 0}
+                {filteredEmployees.length ? formatCurrency(Math.round(totalSalary / filteredEmployees.length)) : formatCurrency(0)}
               </p>
             </div>
           </div>
@@ -172,7 +173,7 @@ export default function EmployeesPage() {
                       <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                         {new Date(employee.startDate).toLocaleDateString('tr-TR')}
                       </td>
-                      <td className="py-4 px-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">₺{employee.salary.toLocaleString()}</td>
+                      <td className="py-4 px-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{formatCurrency(employee.salary)}</td>
                       <td className="py-4 px-4 whitespace-nowrap">
                         <StatusBadge status={employee.status} />
                       </td>
