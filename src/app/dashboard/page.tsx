@@ -68,11 +68,14 @@ export default function Dashboard() {
         
         // API'den Fatura verilerini al
         try {
+          console.log(`Dashboard verilerini ${selectedPeriod} periyodu için yüklüyorum...`);
           const response = await fetch(`/api/dashboard?period=${selectedPeriod}`);
           if (response.ok) {
             const data = await response.json();
             setDashboardData(data);
+            console.log(`${selectedPeriod} periyodu için dashboard verileri başarıyla yüklendi.`);
           } else {
+            console.error(`${selectedPeriod} periyodu için dashboard verileri yüklenemedi.`);
             // API hatası durumunda test verilerini kullan
             setDashboardData(testData);
           }
@@ -147,7 +150,7 @@ export default function Dashboard() {
     }
     
     loadDashboardData();
-  }, [selectedPeriod]);
+  }, [selectedPeriod]); // selectedPeriod değiştiğinde verileri yeniden yükle
 
   // Yükleme durumu
   if (loading) {
@@ -190,53 +193,21 @@ export default function Dashboard() {
   }
 
   // Veri var, normal görünümü göster
-  const { pendingInvoices, recentTransactions } = dashboardData;
+  const { pendingInvoices, recentTransactions, totalIncome, totalExpense, netProfit, details } = dashboardData;
   
-  // Gelir hesapla - giden (outgoing) faturalardan
-  const totalOutgoingInvoices = invoicesData
-    .filter(invoice => invoice.type === 'outgoing')
-    .reduce((sum, invoice) => sum + Number(invoice.totalAmount || 0), 0);
-  
-  // Gider hesapla - gelen (incoming) faturalardan
-  const totalIncomingInvoices = invoicesData
-    .filter(invoice => invoice.type === 'incoming')
-    .reduce((sum, invoice) => sum + Number(invoice.totalAmount || 0), 0);
-  
-  // Fiş giderleri toplamı
-  const totalReceiptExpenses = receiptData.reduce((sum, receipt) => sum + Number(receipt.totalAmount || 0), 0);
-  
-  // API'den gelen gelir 0 ise hesaplanan değeri kullan
-  const totalIncome = dashboardData.totalIncome > 0 
-    ? dashboardData.totalIncome 
-    : totalOutgoingInvoices;
-  
-  // API'den gelen gider 0 ise hesaplanan değeri kullan
-  const totalExpense = dashboardData.totalExpense > 0
-    ? dashboardData.totalExpense
-    : totalIncomingInvoices;
-  
-  // Giderler analizi
-  const totalExpensesAmount = expensesData.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  
-  // Düzenli işlemler analizi
+  // Düzenli işlemler analizi (bu değerler filtrelenmemiş olabilir, sadece ek bilgi olarak gösteriliyor)
   const activeRecurring = recurringData.filter(item => item.isActive).length;
-  const monthlyRecurringExpense = recurringData
-    .filter(item => item.type === 'expense' && item.isActive)
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
   
-  // Düzenli işlemlerden gelen gelir
-  const monthlyRecurringIncome = recurringData
-    .filter(item => item.type === 'income' && item.isActive)
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  
-  // Personel analizi
+  // Personel analizi (bu değerler filtrelenmemiş olabilir, sadece ek bilgi olarak gösteriliyor)
   const totalEmployees = employeeData.length;
   const totalSalaries = employeeData.reduce((sum, emp) => sum + Number(emp.salary || 0), 0);
-
-  // Tüm gelir-gider hesaplaması
-  const totalRevenue = totalIncome + monthlyRecurringIncome; 
-  const totalAllExpenses = totalExpense + totalExpensesAmount + (monthlyRecurringExpense || 0) + totalSalaries + totalReceiptExpenses;
-  const totalProfit = totalRevenue - totalAllExpenses;
+  
+  // API'den gelen filtrelenmiş değerleri kullan
+  const totalRevenue = totalIncome; // API'den gelen filtrelenmiş gelir değeri
+  const totalAllExpenses = totalExpense; // API'den gelen filtrelenmiş gider değeri
+  
+  // API'den gelen filtrelenmiş kar/zarar değerini kullan
+  const totalProfitCalculated = netProfit;
 
   // Dönem seçici için etiketler
   const periodLabels = {
@@ -249,28 +220,42 @@ export default function Dashboard() {
     <div className="py-6 bg-gray-50 dark:bg-dark-bg">
       <div className="max-w-7xl mx-auto px-4">
         {/* Başlık ve filtre */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-dark-text">Finansal Dashboard</h1>
-          <select 
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value as 'week' | 'month' | 'year')}
-            className="bg-white dark:bg-dark-card dark:text-dark-text border border-gray-200 dark:border-dark-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-dark-primary"
-          >
+          
+          {/* Dönem Seçici Butonlar */}
+          <div className="flex items-center space-x-2 bg-white dark:bg-dark-card p-1 rounded-lg border border-gray-200 dark:border-dark-border shadow-sm">
             {Object.entries(periodLabels).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
+              <button
+                key={value}
+                onClick={() => {
+                  console.log(`Dönem değiştiriliyor: ${value}`);
+                  setSelectedPeriod(value as 'week' | 'month' | 'year');
+                  setLoading(true); // Dönem değiştiğinde yükleme durumunu aktifleştir
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                  selectedPeriod === value 
+                    ? 'bg-blue-500 text-white shadow-sm' 
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                {label}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
         {/* Ana Finansal Durum Kartı */}
         <div className="bg-white dark:bg-dark-card p-6 rounded-lg shadow-sm border border-gray-200 dark:border-dark-border mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-medium text-gray-900 dark:text-dark-text">
-              Genel Finansal Durum - {periodLabels[selectedPeriod]}
-            </h2>
+            <div>
+              <h2 className="text-xl font-medium text-gray-900 dark:text-dark-text">
+                Genel Finansal Durum
+              </h2>
+            </div>
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
               <FaChartPie size={24} />
-          </div>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -278,27 +263,27 @@ export default function Dashboard() {
               <p className="text-sm text-green-600 dark:text-green-400 font-medium">Toplam Gelir</p>
               <p className="text-2xl font-bold text-green-700 dark:text-green-300 mt-1">{formatCurrency(totalRevenue)}</p>
               <p className="text-xs text-green-500 dark:text-green-500 mt-1">
-                Fatura Gelirleri: {formatCurrency(totalIncome)} + Düzenli Gelirler: {formatCurrency(monthlyRecurringIncome)}
-            </p>
-          </div>
+                {details && `Fatura: ${formatCurrency(details.invoiceIncome)} + Düzenli: ${formatCurrency(details.recurringIncome)}`}
+              </p>
+            </div>
             
             <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-900/30">
               <p className="text-sm text-red-600 dark:text-red-400 font-medium">Toplam Gider</p>
               <p className="text-2xl font-bold text-red-700 dark:text-red-300 mt-1">{formatCurrency(totalAllExpenses)}</p>
               <p className="text-xs text-red-500 dark:text-red-500 mt-1">
-                {invoicesData.filter(i => i.type === 'incoming').length} gelen fatura + {expensesData.length} gider kaydı + {activeRecurring} düzenli ödeme + {totalEmployees} personel
+                {details && `Fatura: ${formatCurrency(details.invoiceExpense)} + Diğer: ${formatCurrency(details.expenseAmount + details.receiptAmount + details.recurringExpense)}`}
               </p>
-        </div>
+            </div>
 
-            <div className={`p-4 ${totalProfit >= 0 ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900/30' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/30'} rounded-lg border`}>
-              <p className={`text-sm ${totalProfit >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'} font-medium`}>
+            <div className={`p-4 ${totalProfitCalculated >= 0 ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900/30' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/30'} rounded-lg border`}>
+              <p className={`text-sm ${totalProfitCalculated >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'} font-medium`}>
                 Net Kar/Zarar
               </p>
-              <p className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-amber-700 dark:text-amber-300'} mt-1`}>
-                {formatCurrency(totalProfit)}
+              <p className={`text-2xl font-bold ${totalProfitCalculated >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-amber-700 dark:text-amber-300'} mt-1`}>
+                {formatCurrency(totalProfitCalculated)}
               </p>
-              <p className={`text-xs ${totalProfit >= 0 ? 'text-blue-500 dark:text-blue-500' : 'text-amber-500 dark:text-amber-500'} mt-1`}>
-                {totalProfit >= 0 ? 'Kârlılık Oranı: ' + Math.round((totalProfit / totalRevenue) * 100 || 0) + '%' : 'Zarardasınız!'}
+              <p className={`text-xs ${totalProfitCalculated >= 0 ? 'text-blue-500 dark:text-blue-500' : 'text-amber-500 dark:text-amber-500'} mt-1`}>
+                {totalProfitCalculated >= 0 ? 'Kârlılık Oranı: ' + Math.round((totalProfitCalculated / totalRevenue) * 100 || 0) + '%' : 'Zarardasınız!'}
               </p>
             </div>
           </div>
@@ -308,18 +293,22 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Fatura Giderleri</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(totalExpense)}</p>
-                <p className="text-xs text-gray-500 mt-1">({invoicesData.filter(i => i.type === 'incoming').length} gelen fatura)</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {details ? formatCurrency(details.invoiceExpense) : formatCurrency(totalExpense)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">(Filtrelenmiş dönem)</p>
               </div>
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Doğrudan Giderler</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(totalExpensesAmount)}</p>
-                <p className="text-xs text-gray-500 mt-1">({expensesData.length} gider kaydı)</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {details ? formatCurrency(details.expenseAmount) : formatCurrency(0)}
+                </p>
               </div>
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Fiş Giderleri</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(totalReceiptExpenses)}</p>
-                <p className="text-xs text-gray-500 mt-1">({receiptData.length} fiş kaydı)</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {details ? formatCurrency(details.receiptAmount) : formatCurrency(0)}
+                </p>
               </div>
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Personel Maaşları</p>
@@ -327,9 +316,10 @@ export default function Dashboard() {
                 <p className="text-xs text-gray-500 mt-1">({totalEmployees} personel)</p>
               </div>
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Düzenli Ödemeler</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(monthlyRecurringExpense)}</p>
-                <p className="text-xs text-gray-500 mt-1">({activeRecurring} aktif işlem)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Düzenli Giderler</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {details ? formatCurrency(details.recurringExpense) : formatCurrency(0)}
+                </p>
               </div>
             </div>
           </div>
@@ -339,8 +329,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <StatCard 
             title="Faturalar" 
-            value={formatCurrency(totalRevenue - totalExpense)}
-            subtext={`${formatCurrency(totalRevenue)} gelir, ${formatCurrency(totalExpense)} gider, ${formatCurrency(totalReceiptExpenses)} fiş gideri`}
+            value={formatCurrency(details ? details.invoiceIncome - details.invoiceExpense : totalIncome)}
+            subtext={`Filtrelenmiş dönem: ${formatCurrency(details ? details.invoiceIncome : totalIncome)} gelir, ${formatCurrency(details ? details.invoiceExpense : totalExpense)} gider`}
             icon={<FaFileInvoice size={20} />}
           />
           <StatCard 
@@ -354,8 +344,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <StatCard 
             title="Giderler ve Düzenli İşlemler" 
-            value={formatCurrency(totalExpensesAmount + monthlyRecurringExpense)}
-            subtext={`Giderler: ${formatCurrency(totalExpensesAmount)}, Düzenli Giderler: ${formatCurrency(monthlyRecurringExpense)}, Düzenli Gelirler: ${formatCurrency(monthlyRecurringIncome)}`}
+            value={formatCurrency(details ? details.expenseAmount + details.receiptAmount + details.recurringExpense : 0)}
+            subtext={`Giderler: ${formatCurrency(details ? details.expenseAmount : 0)}, Fiş: ${formatCurrency(details ? details.receiptAmount : 0)}, Düzenli: ${formatCurrency(details ? details.recurringExpense : 0)}`}
             icon={<FaMoneyBillWave size={20} />}
           />
           <StatCard 

@@ -119,4 +119,12 @@ export interface DashboardData {
     amount: number;
     type: string;
   }[];
+  details?: {
+    invoiceIncome: number;
+    invoiceExpense: number;
+    expenseAmount: number;
+    receiptAmount: number;
+    recurringIncome: number;
+    recurringExpense: number;
+  };
 } 

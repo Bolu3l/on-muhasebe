@@ -24,14 +24,39 @@ async function withDatabaseCheck<T>(apiCall: () => Promise<T>): Promise<T> {
   return apiCall();
 }
 
+// Tarih aralığı için yardımcı fonksiyon
+function isDateInRange(date: Date | null | undefined, startDate: Date, endDate: Date): boolean {
+  if (!date) return false;
+  
+  // Tarih karşılaştırması yapılırken saat, dakika, saniye bilgilerini sıfırla
+  const dateOnly = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+  
+  const startDateOnly = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate()
+  );
+  
+  const endDateOnly = new Date(
+    endDate.getFullYear(),
+    endDate.getMonth(),
+    endDate.getDate()
+  );
+  
+  // Tarih karşılaştırması yap (sadece gün, ay, yıl)
+  return dateOnly >= startDateOnly && dateOnly <= endDateOnly;
+}
+
 // Dashboard verilerini getir
 export async function getDashboardData(period: 'week' | 'month' | 'year' = 'month'): Promise<DashboardData> {
   try {
     console.log('getDashboardData çağrıldı, dönem:', period);
-    console.log('SORUNU BULMAK İÇİN ADIM ADIM İLERLEYECEĞİZ');
     
     // İlk olarak veritabanı bağlantısını test et
-    console.log('1. ADIM: VERİTABANI BAĞLANTISINI KONTROL EDİYORUM');
     try {
       const testResult = await prisma.$queryRaw`SELECT 1 as test`;
       console.log('Veritabanı bağlantısı başarılı:', testResult);
@@ -40,37 +65,41 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
       throw new Error('Veritabanı bağlantısı kurulamadı!');
     }
     
-    // Dönem başlangıç ve bitiş tarihlerini hesapla
-    console.log('2. ADIM: TARİH ARALIĞINI BELİRLİYORUM');
+    // Tarih aralığını hesapla
     const now = new Date();
     let startDate = new Date();
     
     switch (period) {
       case 'week':
-        // Haftanın başlangıcı (Pazartesi) olarak ayarla
-        const day = now.getDay();
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Pazar günü için ayarlama
+        // Haftanın başlangıcı (Pazartesi)
         startDate = new Date(now);
-        startDate.setDate(diff);
+        const currentDay = startDate.getDay(); // 0=Pazar, 1=Pazartesi, ..., 6=Cumartesi
+        
+        // Eğer bugün Pazar ise (0), 6 gün geri git; diğer günlerde (1-6) bugünden geriye doğru o günün numarası - 1 kadar git
+        const daysToSubtract = currentDay === 0 ? 6 : currentDay - 1;
+        startDate.setDate(startDate.getDate() - daysToSubtract);
         startDate.setHours(0, 0, 0, 0);
+        
+        console.log(`Bugün haftanın ${currentDay}. günü, ${daysToSubtract} gün çıkarıldı`);
         break;
+        
       case 'month':
-        // İçinde bulunulan ayın başlangıcı (1'i) olarak ayarla
+        // Ayın başlangıcı (1'i)
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         break;
+        
       case 'year':
-        // İçinde bulunulan yılın başlangıcı (1 Ocak) olarak ayarla
+        // Yılın başlangıcı (1 Ocak)
         startDate = new Date(now.getFullYear(), 0, 1);
         break;
     }
     
-    console.log('Dönem başlangıç tarihi:', startDate.toISOString());
-    console.log('Dönem bitiş tarihi:', now.toISOString());
+    console.log(`Seçilen dönem: ${period}`);
+    console.log(`Başlangıç tarihi: ${startDate.toISOString()}`);
+    console.log(`Bitiş tarihi: ${now.toISOString()}`);
     
-    // 3. Faturaları direkt SQL ile getir
-    console.log('3. ADIM: TÜM FATURALARI GETİRİYORUM');
-    // String olarak alarak decimal dönüşüm sorunlarını aş
-    const rawInvoices: any[] = await prisma.$queryRaw`
+    // 1. TÜM FATURALARI getir
+    const allInvoices: any[] = await prisma.$queryRaw`
       SELECT 
         id, 
         "invoiceNumber", 
@@ -79,125 +108,172 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         type, 
         status
       FROM "Invoice"
+      WHERE "invoiceDate" IS NOT NULL
+      ORDER BY "invoiceDate" DESC
     `;
     
-    console.log(`Toplam ${rawInvoices.length} fatura bulundu`);
+    // 2. TÜM GİDERLERİ getir
+    const allExpenses: any[] = await prisma.$queryRaw`
+      SELECT 
+        id, 
+        title, 
+        amount::numeric as amount, 
+        "expenseDate", 
+        category
+      FROM "Expense"
+      WHERE "expenseDate" IS NOT NULL
+      ORDER BY "expenseDate" DESC
+    `;
     
-    if (rawInvoices.length === 0) {
-      console.log('UYARI: Veritabanında hiç fatura bulunamadı!');
-      console.log('Hiç fatura olmadığı için dashboard 0 değerlerle dönecek!');
-    } else {
-      console.log('MEVCUT FATURALAR:');
-      for (let i = 0; i < Math.min(5, rawInvoices.length); i++) {
-        const inv = rawInvoices[i];
-        console.log(`Fatura #${i+1}:`);
-        console.log('  ID:', inv.id);
-        console.log('  Tip:', inv.type);
-        console.log('  Tutar:', inv.amount, 'Tipi:', typeof inv.amount);
-        console.log('  Tarih:', inv.invoiceDate, 'Tipi:', typeof inv.invoiceDate);
-      }
-    }
+    // 3. TÜM FİŞ GİDERLERİNİ getir
+    const allReceipts: any[] = await prisma.$queryRaw`
+      SELECT 
+        id, 
+        title, 
+        "totalAmount"::numeric as amount, 
+        "expenseDate", 
+        category
+      FROM "ReceiptExpense"
+      WHERE "expenseDate" IS NOT NULL
+      ORDER BY "expenseDate" DESC
+    `;
     
-    // 4. Tarih filtreleme
-    console.log('4. ADIM: FATURALARI FİLTRELİYORUM');
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
+    // 4. TÜM DÜZENLİ İŞLEMLERİ getir
+    const allRecurring: any[] = await prisma.$queryRaw`
+      SELECT 
+        id, 
+        title, 
+        amount::numeric as amount, 
+        "startDate",
+        frequency,
+        type,
+        "isActive"
+      FROM "RecurringTransaction"
+      WHERE "isActive" = true
+      ORDER BY "startDate" DESC
+    `;
     
-    const filteredInvoices = rawInvoices.filter(invoice => {
-      if (!invoice.invoiceDate) {
-        console.log(`Fatura ${invoice.id} tarih değeri yok, FİLTRELENDİ`);
-        return false;
-      }
-      
-      // Tarih formatını kontrol et
-      let invoiceDate;
-      try {
-        invoiceDate = new Date(invoice.invoiceDate);
-        
-        // Geçersiz tarih kontrolü
-        if (isNaN(invoiceDate.getTime())) {
-          console.log(`Fatura ${invoice.id} geçersiz tarih: ${invoice.invoiceDate}, FİLTRELENDİ`);
-          return false;
-        }
-      } catch (e) {
-        console.log(`Fatura ${invoice.id} tarih dönüşüm hatası: ${e}, FİLTRELENDİ`);
-        return false;
-      }
-      
-      const invoiceYear = invoiceDate.getFullYear();
-      const invoiceMonth = invoiceDate.getMonth();
-      
-      let isInPeriod = false;
-      
-      if (period === 'year') {
-        isInPeriod = (invoiceYear === currentYear);
-      } else if (period === 'month') {
-        isInPeriod = (invoiceYear === currentYear && invoiceMonth === currentMonth);
-      } else {
-        isInPeriod = (invoiceDate >= startDate && invoiceDate <= now);
-      }
-      
-      if (!isInPeriod) {
-        console.log(`Fatura ${invoice.id} dönem dışında: ${invoice.invoiceDate}, FİLTRELENDİ`);
-      }
-      
-      return isInPeriod;
-    });
+    // FATURALARI FİLTRELE
+    const filteredInvoices = allInvoices.filter(invoice => 
+      isDateInRange(new Date(invoice.invoiceDate), startDate, now)
+    );
     
-    console.log(`Filtreleme sonrası ${filteredInvoices.length} fatura kaldı (dönem: ${period})`);
+    // GİDERLERİ FİLTRELE
+    const filteredExpenses = allExpenses.filter(expense => 
+      isDateInRange(new Date(expense.expenseDate), startDate, now)
+    );
     
-    // 5. Gelir ve Gider hesapla
-    console.log('5. ADIM: GELİR VE GİDERLERİ HESAPLIYORUM');
+    // FİŞ GİDERLERİNİ FİLTRELE
+    const filteredReceipts = allReceipts.filter(receipt => 
+      isDateInRange(new Date(receipt.expenseDate), startDate, now)
+    );
     
-    let totalIncome = 0;
-    let totalExpense = 0;
-    let processedIncomeCount = 0;
-    let processedExpenseCount = 0;
+    // DÜZENLİ İŞLEMLERİ FİLTRELE (başlangıç tarihi dönem içinde olanlar)
+    const filteredRecurring = allRecurring.filter(recurring => 
+      isDateInRange(new Date(recurring.startDate), startDate, now)
+    );
+    
+    console.log(`Dönem (${period}) içinde:`);
+    console.log(`- ${filteredInvoices.length}/${allInvoices.length} fatura`);
+    console.log(`- ${filteredExpenses.length}/${allExpenses.length} gider`);
+    console.log(`- ${filteredReceipts.length}/${allReceipts.length} fiş gideri`);
+    console.log(`- ${filteredRecurring.length}/${allRecurring.length} düzenli işlem`);
+    
+    // FATURALARDAN GELİR VE GİDER HESAPLA
+    let totalInvoiceIncome = 0;
+    let totalInvoiceExpense = 0;
     
     for (const invoice of filteredInvoices) {
-      // Tutar kontrolü
-      if (invoice.amount === null || invoice.amount === undefined) {
-        console.log(`Fatura ${invoice.id} tutarı bulunamadı, atlanıyor`);
-        continue;
-      }
+      if (invoice.amount === null || invoice.amount === undefined) continue;
       
-      // Tipi string ise sayıya çevir
+      // Tutarı sayısal değere dönüştür
       let amount = invoice.amount;
       if (typeof amount === 'string') {
         amount = parseFloat(amount.replace(',', '.'));
       } else if (typeof amount === 'object') {
-        // Decimal objesi olabilir
         amount = parseFloat(amount.toString());
       }
       
-      // Sayısal değer kontrolü
-      if (isNaN(amount)) {
-        console.log(`Fatura ${invoice.id} geçersiz tutar: ${invoice.amount}, atlanıyor`);
-        continue;
-      }
+      if (isNaN(amount)) continue;
       
       if (invoice.type === 'outgoing') {
-        totalIncome += amount;
-        processedIncomeCount++;
-        console.log(`Gelir eklendi: Fatura ${invoice.id}, Tutar: ${amount}, Yeni Toplam: ${totalIncome}`);
+        totalInvoiceIncome += amount;
       } else if (invoice.type === 'incoming') {
-        totalExpense += amount;
-        processedExpenseCount++;
-        console.log(`Gider eklendi: Fatura ${invoice.id}, Tutar: ${amount}, Yeni Toplam: ${totalExpense}`);
-      } else {
-        console.log(`Fatura ${invoice.id} bilinmeyen tipte: ${invoice.type}, atlanıyor`);
+        totalInvoiceExpense += amount;
       }
     }
     
-    console.log(`İşlenen gelir faturaları: ${processedIncomeCount}, Toplam gelir: ${totalIncome}`);
-    console.log(`İşlenen gider faturaları: ${processedExpenseCount}, Toplam gider: ${totalExpense}`);
+    // GİDERLERDEN TOPLAM GİDER HESAPLA
+    let totalExpenseAmount = 0;
+    for (const expense of filteredExpenses) {
+      if (expense.amount === null || expense.amount === undefined) continue;
+      
+      let amount = expense.amount;
+      if (typeof amount === 'string') {
+        amount = parseFloat(amount.replace(',', '.'));
+      } else if (typeof amount === 'object') {
+        amount = parseFloat(amount.toString());
+      }
+      
+      if (isNaN(amount)) continue;
+      totalExpenseAmount += amount;
+    }
     
-    // 6. Net kar/zarar hesapla
+    // FİŞ GİDERLERİNDEN TOPLAM GİDER HESAPLA
+    let totalReceiptAmount = 0;
+    for (const receipt of filteredReceipts) {
+      if (receipt.amount === null || receipt.amount === undefined) continue;
+      
+      let amount = receipt.amount;
+      if (typeof amount === 'string') {
+        amount = parseFloat(amount.replace(',', '.'));
+      } else if (typeof amount === 'object') {
+        amount = parseFloat(amount.toString());
+      }
+      
+      if (isNaN(amount)) continue;
+      totalReceiptAmount += amount;
+    }
+    
+    // DÜZENLİ İŞLEMLERDEN GELİR VE GİDER HESAPLA
+    let totalRecurringIncome = 0;
+    let totalRecurringExpense = 0;
+    
+    for (const recurring of filteredRecurring) {
+      if (recurring.amount === null || recurring.amount === undefined) continue;
+      
+      let amount = recurring.amount;
+      if (typeof amount === 'string') {
+        amount = parseFloat(amount.replace(',', '.'));
+      } else if (typeof amount === 'object') {
+        amount = parseFloat(amount.toString());
+      }
+      
+      if (isNaN(amount)) continue;
+      
+      if (recurring.type === 'income') {
+        totalRecurringIncome += amount;
+      } else if (recurring.type === 'expense') {
+        totalRecurringExpense += amount;
+      }
+    }
+    
+    // TOPLAM GELİR VE GİDER HESAPLA
+    const totalIncome = totalInvoiceIncome + totalRecurringIncome;
+    const totalExpense = totalInvoiceExpense + totalExpenseAmount + totalReceiptAmount + totalRecurringExpense;
+    
+    // NET KAR/ZARAR HESAPLA
     const netProfit = totalIncome - totalExpense;
-    console.log(`Net kar/zarar: ${netProfit}`);
     
-    // 7. İlave bilgileri getir
-    console.log('7. ADIM: BEKLEYEN FATURALARI VE SON İŞLEMLERİ GETİRİYORUM');
+    console.log(`Dönem (${period}) içindeki toplam gelir: ${totalIncome}`);
+    console.log(`- Fatura gelirleri: ${totalInvoiceIncome}`);
+    console.log(`- Düzenli gelirler: ${totalRecurringIncome}`);
+    
+    console.log(`Dönem (${period}) içindeki toplam gider: ${totalExpense}`);
+    console.log(`- Fatura giderleri: ${totalInvoiceExpense}`);
+    console.log(`- Doğrudan giderler: ${totalExpenseAmount}`);
+    console.log(`- Fiş giderleri: ${totalReceiptAmount}`);
+    console.log(`- Düzenli giderler: ${totalRecurringExpense}`);
     
     // Bekleyen faturaları getir
     const pendingInvoicesResult: any[] = await prisma.$queryRaw`
@@ -210,8 +286,6 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
       count: Number(pendingInvoicesResult[0]?.count || 0),
       total: Number(pendingInvoicesResult[0]?.total || 0)
     };
-    
-    console.log('Bekleyen faturalar:', pendingInvoices);
     
     // Son işlemleri getir
     const recentInvoicesRaw: any[] = await prisma.$queryRaw`
@@ -255,28 +329,31 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
       }))
     ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
     
-    console.log(`Son işlemler: ${recentTransactions.length} adet`);
-    
-    // 8. Son sonucu hazırla
-    console.log('8. ADIM: SON SONUCU HAZIRLIYORUM VE DÖNÜYORUM');
-    
+    // Sonucu hazırla
     const result = {
       totalIncome,
       totalExpense,
       netProfit,
       pendingInvoices,
-      recentTransactions
+      recentTransactions,
+      // Detaylı gelir-gider bilgileri
+      details: {
+        invoiceIncome: totalInvoiceIncome,
+        invoiceExpense: totalInvoiceExpense,
+        expenseAmount: totalExpenseAmount,
+        receiptAmount: totalReceiptAmount,
+        recurringIncome: totalRecurringIncome,
+        recurringExpense: totalRecurringExpense
+      }
     };
-    
-    console.log('SONUÇ:', result);
     
     return result;
   } catch (error) {
-    console.error('GENİŞLETİLMİŞ HATA AYRINTI!:', error);
+    console.error('Dashboard verileri alınırken hata oluştu:', error);
     console.error('Hata mesajı:', error instanceof Error ? error.message : 'Bilinmeyen hata');
     console.error('Hata stacktrace:', error instanceof Error ? error.stack : 'Stack yok');
     
-    // Hata durumunda mümkün olduğunca kullanıcı dostu bir yanıt döndür
+    // Hata durumunda varsayılan değerleri döndür
     return {
       totalIncome: 0,
       totalExpense: 0,
