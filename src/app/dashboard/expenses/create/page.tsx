@@ -15,6 +15,7 @@ export default function CreateExpensePage() {
     category: 'ofis',
     status: 'pending',
     description: '',
+    paymentMethod: 'nakit',
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,6 +154,25 @@ export default function CreateExpensePage() {
                 <option value="kira">Kira</option>
                 <option value="maaş">Maaş</option>
                 <option value="fatura">Fatura</option>
+                <option value="diğer">Diğer</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Ödeme Yöntemi
+              </label>
+              <select
+                id="paymentMethod"
+                name="paymentMethod"
+                value={formData.paymentMethod}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              >
+                <option value="nakit">Nakit</option>
+                <option value="banka">Banka Transferi</option>
+                <option value="kredi">Kredi Kartı</option>
+                <option value="çek">Çek</option>
                 <option value="diğer">Diğer</option>
               </select>
             </div>

@@ -1,20 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
-const ReportCard = ({ title, description, icon, onClick }: { title: string; description: string; icon: React.ReactNode; onClick: () => void }) => (
-  <div
-    onClick={onClick}
-    className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-400 transition cursor-pointer"
-  >
-    <div className="flex items-center mb-4">
-      <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg text-blue-600 dark:text-blue-400 mr-4">
-        {icon}
+// Rapor türü kartı bileşeni
+const ReportCard = ({ 
+  title, 
+  description, 
+  icon, 
+  link 
+}: { 
+  title: string; 
+  description: string; 
+  icon: React.ReactNode; 
+  link: string 
+}) => (
+  <Link href={link} className="block">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-400 transition cursor-pointer">
+      <div className="flex items-center mb-4">
+        <div className="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg text-blue-600 dark:text-blue-400 mr-4">
+          {icon}
+        </div>
+        <h2 className="text-lg font-medium dark:text-white">{title}</h2>
       </div>
-      <h2 className="text-lg font-medium dark:text-white">{title}</h2>
+      <p className="text-gray-600 dark:text-gray-400 text-sm">{description}</p>
     </div>
-    <p className="text-gray-600 dark:text-gray-400 text-sm">{description}</p>
-  </div>
+  </Link>
 );
 
 // Örnek chart bileşeni
@@ -180,319 +191,183 @@ export default function ReportsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold dark:text-white">Raporlar</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            İşletmenizin performansını analiz edin
-          </p>
-        </div>
-        
-        <div className="mt-4 md:mt-0">
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold dark:text-white">Finansal Raporlar</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
+          İşletmenizin finansal durumunu analiz edin ve detaylı raporlar oluşturun
+        </p>
+      </div>
+      
+      {/* Rapor Kartları */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ReportCard
+          title="Nakit Akışı Tahminleri"
+          description="Gelecek dönemler için nakit akışı projeksiyonları ve tahminleri"
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Raporu İndir
-          </button>
+          }
+          link="/dashboard/reports/nakit-akisi"
+        />
+        
+        <ReportCard
+          title="Kâr/Zarar Analizleri"
+          description="İşletmenizin kârlılık performansı ve finansal analizleri"
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          }
+          link="/dashboard/reports/kar-zarar"
+        />
+        
+        <ReportCard
+          title="Alacak/Borç Vade Analizleri"
+          description="Alacak ve borçların vade durumları ve ödemeler analizi"
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          }
+          link="/dashboard/reports/alacak-borc"
+        />
+        
+        <ReportCard
+          title="Grafiksel Finansal Raporlar"
+          description="İşletmenizin finansal verilerini görsel raporlar ile analiz edin"
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+          }
+          link="/dashboard/reports/grafik-raporlar"
+        />
+        
+        <ReportCard
+          title="Vergi Beyanname Hazırlama"
+          description="KDV, muhtasar ve gelir vergisi beyannamelerini hazırlayın ve yönetin"
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+            </svg>
+          }
+          link="/dashboard/reports/vergi-beyanname"
+        />
+      </div>
+      
+      {/* Hızlı Raporlar Bölümü */}
+      <div className="mt-12">
+        <h2 className="text-xl font-bold dark:text-white mb-4">Hızlı Raporlar</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-400 transition cursor-pointer">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-medium dark:text-white">Aylık Gelir Raporu</span>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-400 transition cursor-pointer">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-medium dark:text-white">Vadesi Geçen Alacaklar</span>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-400 transition cursor-pointer">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-medium dark:text-white">KDV Raporu</span>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-400 transition cursor-pointer">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-medium dark:text-white">Personel Gider Raporu</span>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-400 transition cursor-pointer">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-medium dark:text-white">Stok Değerleme</span>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-400 transition cursor-pointer">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-medium dark:text-white">Banka Mutabakatı</span>
+            </div>
+          </div>
         </div>
       </div>
       
-      {/* Başlık ve Seçim */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-        {activeReport ? (
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between">
-            <button 
-              onClick={() => setActiveReport(null)} 
-              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 md:mb-0"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-              </svg>
-              Rapor Listesine Dön
-            </button>
-            
-            <div className="flex items-center">
-              <select className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                <option value="year">Son 1 Yıl</option>
-                <option value="month">Son 1 Ay</option>
-                <option value="quarter">Son 3 Ay</option>
-                <option value="custom">Özel Aralık</option>
-              </select>
-            </div>
-          </div>
-        ) : (
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-medium dark:text-white">Rapor Seçin</h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Analiz etmek istediğiniz rapor türünü seçin</p>
-          </div>
-        )}
+      {/* Özel Rapor Oluşturma */}
+      <div className="mt-12 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <h2 className="text-xl font-bold dark:text-white mb-4">Özel Rapor Oluştur</h2>
         
-        {isLoading ? (
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-40 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-              ))}
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Rapor Türü
+            </label>
+            <select className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+              <option>Gelir Raporu</option>
+              <option>Gider Raporu</option>
+              <option>Kâr/Zarar Raporu</option>
+              <option>Müşteri Analizi</option>
+              <option>Tedarikçi Analizi</option>
+              <option>Vergi Raporu</option>
+            </select>
           </div>
-        ) : activeReport ? (
-          <div className="p-6">
-            {activeReport === 'sales' && (
-              <>
-                <h3 className="text-lg font-medium dark:text-white mb-4">Satış Performansı</h3>
-                <div className="bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg">
-                  <Chart type="bar" data={demoData.sales} />
-                </div>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Toplam Satış</p>
-                    <p className="text-2xl font-bold dark:text-white mt-1">₺124,500</p>
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-2">↑ %12 geçen aya göre</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Ortalama Fatura</p>
-                    <p className="text-2xl font-bold dark:text-white mt-1">₺4,150</p>
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-2">↓ %3 geçen aya göre</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Fatura Adedi</p>
-                    <p className="text-2xl font-bold dark:text-white mt-1">30</p>
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-2">↑ %15 geçen aya göre</p>
-                  </div>
-                </div>
-              </>
-            )}
-            
-            {activeReport === 'categories' && (
-              <>
-                <h3 className="text-lg font-medium dark:text-white mb-4">Kategori Dağılımı</h3>
-                <div className="flex flex-col md:flex-row">
-                  <div className="flex-1 bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg">
-                    <Chart type="pie" data={demoData.categories} />
-                  </div>
-                  <div className="flex-1 mt-6 md:mt-0 md:ml-6">
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mb-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">En Çok Satan Kategori</p>
-                      <p className="text-lg font-bold dark:text-white mt-1">Teknoloji</p>
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">₺55,800 toplam değer</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mb-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">En Hızlı Büyüyen Kategori</p>
-                      <p className="text-lg font-bold dark:text-white mt-1">Hizmetler</p>
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">↑ %28 geçen aya göre</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">En Düşük Performans</p>
-                      <p className="text-lg font-bold dark:text-white mt-1">Diğer</p>
-                      <p className="text-xs text-red-600 dark:text-red-400 mt-2">↓ %5 geçen aya göre</p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-            
-            {activeReport === 'customers' && (
-              <>
-                <h3 className="text-lg font-medium dark:text-white mb-4">Müşteri Analizi</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Müşteri Tipi</h4>
-                    <Chart type="pie" data={demoData.customers} />
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Müşteri Büyümesi</h4>
-                    <Chart type="line" data={demoData.growth} />
-                  </div>
-                </div>
-                <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h4 className="font-medium dark:text-white">En Değerli Müşteriler</h4>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 dark:bg-gray-700 text-left">
-                        <tr>
-                          <th className="px-6 py-3 text-gray-500 dark:text-gray-400 text-sm font-medium">Müşteri</th>
-                          <th className="px-6 py-3 text-gray-500 dark:text-gray-400 text-sm font-medium">Toplam Satış</th>
-                          <th className="px-6 py-3 text-gray-500 dark:text-gray-400 text-sm font-medium">Fatura Adedi</th>
-                          <th className="px-6 py-3 text-gray-500 dark:text-gray-400 text-sm font-medium">Son İşlem</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {[
-                          { name: "Mehmet Kaya", company: "123 Holding", total: 32400, count: 3, lastDate: "10.07.2023" },
-                          { name: "Ahmet Yılmaz", company: "ABC Teknoloji Ltd.", total: 24500, count: 5, lastDate: "15.06.2023" },
-                          { name: "Ayşe Demir", company: "XYZ Danışmanlık A.Ş.", total: 18750, count: 2, lastDate: "20.06.2023" },
-                          { name: "Mustafa Öztürk", company: "Global Ticaret", total: 15200, count: 4, lastDate: "18.05.2023" },
-                          { name: "Zeynep Şahin", company: "Acme Ltd.", total: 9800, count: 1, lastDate: "05.04.2023" }
-                        ].map((customer, i) => (
-                          <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td className="px-6 py-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">{customer.name}</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">{customer.company}</div>
-                            </td>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                              ₺{customer.total.toLocaleString('tr-TR')}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                              {customer.count}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                              {customer.lastDate}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </>
-            )}
-            
-            {activeReport === 'payments' && (
-              <>
-                <h3 className="text-lg font-medium dark:text-white mb-4">Ödeme Analizi</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Ödeme Metodları</h4>
-                    <Chart type="pie" data={demoData.payments} />
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Tahsilatlar</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Zamanında Ödenen</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">₺89,450</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{ width: '80%' }}></div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Geciken Ödemeler</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">₺15,200</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '15%' }}></div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Ödemesi Bekleyenler</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">₺8,850</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div className="bg-blue-500 h-2 rounded-full" style={{ width: '5%' }}></div>
-                        </div>
-                      </div>
-                      
-                      <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex justify-between">
-                          <span className="font-medium dark:text-white">Toplam</span>
-                          <span className="font-bold dark:text-white">₺113,500</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Ortalama Tahsilat Süresi</p>
-                    <p className="text-2xl font-bold dark:text-white mt-1">15 gün</p>
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-2">↓ 2 gün geçen aya göre</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">En Çok Tercih Edilen Metod</p>
-                    <p className="text-2xl font-bold dark:text-white mt-1">Kredi Kartı</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Toplam ödemelerin %65'i</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Gecikmiş Ödemeler</p>
-                    <p className="text-2xl font-bold dark:text-white mt-1">₺15,200</p>
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-2">3 adet fatura</p>
-                  </div>
-                </div>
-              </>
-            )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Tarih Aralığı
+            </label>
+            <select className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+              <option>Bu Ay</option>
+              <option>Son 3 Ay</option>
+              <option>Son 6 Ay</option>
+              <option>Bu Yıl</option>
+              <option>Geçen Yıl</option>
+              <option>Özel Aralık</option>
+            </select>
           </div>
-        ) : (
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <ReportCard 
-                title="Satış Performansı" 
-                description="Zamanla işletmenizin satışlarını ve gelirlerini analiz edin."
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                }
-                onClick={() => setActiveReport('sales')}
-              />
-              
-              <ReportCard 
-                title="Kategori Dağılımı" 
-                description="Ürün ve hizmet kategorilerinin satışlardaki dağılımını görüntüleyin."
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                  </svg>
-                }
-                onClick={() => setActiveReport('categories')}
-              />
-              
-              <ReportCard 
-                title="Müşteri Analizi" 
-                description="Müşteri davranışlarını ve müşteri bazlı gelirleri inceleyin."
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                }
-                onClick={() => setActiveReport('customers')}
-              />
-              
-              <ReportCard 
-                title="Ödeme Analizi" 
-                description="Ödeme yöntemlerini ve tahsilatları analiz edin."
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                }
-                onClick={() => setActiveReport('payments')}
-              />
-              
-              <ReportCard 
-                title="Kar Marjı Raporu" 
-                description="Ürün ve hizmet bazında maliyetleri ve kar marjlarını görüntüleyin."
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                }
-                onClick={() => setActiveReport('margins')}
-              />
-              
-              <ReportCard 
-                title="Dönemsel Karşılaştırma" 
-                description="Farklı dönemleri karşılaştırarak işletmenizin gelişimini izleyin."
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                }
-                onClick={() => setActiveReport('periods')}
-              />
-            </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Rapor Formatı
+            </label>
+            <select className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+              <option>PDF</option>
+              <option>Excel</option>
+              <option>CSV</option>
+              <option>Görsel Rapor</option>
+            </select>
           </div>
-        )}
+        </div>
+        
+        <div className="text-right">
+          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
+            Rapor Oluştur
+          </button>
+        </div>
       </div>
     </div>
   );

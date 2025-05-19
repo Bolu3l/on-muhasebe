@@ -487,3 +487,63 @@ export async function getRecurringTransactions(type?: string, isActive?: boolean
     return [];
   }
 } 
+
+// Fiş giderlerini getir
+export async function getReceiptExpenses(category?: string) {
+  try {
+    console.log('getReceiptExpenses API çağrısı yapılıyor...');
+    
+    const categoryFilter = category ? { category } : {};
+    
+    // Toplam kayıt sayısını kontrol et
+    const count = await prisma.receiptExpense.count({
+      where: categoryFilter
+    });
+    console.log(`ReceiptExpense tablosunda ${count} kayıt bulundu.`);
+    
+    if (count === 0) {
+      console.log('Hiç fiş gideri kaydı bulunamadı!');
+      return [];
+    }
+    
+    // Standart sorgu ile verileri getir
+    const receiptExpenses = await prisma.receiptExpense.findMany({
+      where: categoryFilter,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        amount: true,
+        expenseDate: true,
+        category: true,
+        receiptNumber: true,
+        taxRate: true,
+        taxAmount: true,
+        totalAmount: true,
+        paymentMethod: true,
+        isVerified: true,
+        supplier: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
+      orderBy: { expenseDate: 'desc' }
+    });
+    
+    console.log(`${receiptExpenses.length} fiş gideri veritabanından alındı.`);
+    
+    // Decimal alanları dönüştür - string olarak döndür
+    return receiptExpenses.map(receipt => ({
+      ...receipt,
+      amount: receipt.amount ? Number(receipt.amount.toString()) : 0,
+      taxRate: receipt.taxRate ? Number(receipt.taxRate.toString()) : 0,
+      taxAmount: receipt.taxAmount ? Number(receipt.taxAmount.toString()) : 0,
+      totalAmount: receipt.totalAmount ? Number(receipt.totalAmount.toString()) : 0
+    }));
+  } catch (error) {
+    console.error('Fiş giderleri alınırken hata oluştu:', error);
+    return [];
+  }
+} 

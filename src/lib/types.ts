@@ -85,6 +85,25 @@ export interface Expense {
   updatedAt: Date;
 }
 
+export interface ReceiptExpense {
+  id: string;
+  title: string;
+  description: string | null;
+  amount: number;
+  expenseDate: Date;
+  category: string;
+  receiptNumber: string | null;
+  taxRate: number;
+  taxAmount: number;
+  totalAmount: number;
+  paymentMethod: string;
+  supplierId: string | null;
+  receiptImageUrl: string | null;
+  isVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface DashboardData {
   totalIncome: number;
   totalExpense: number;

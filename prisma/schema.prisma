@@ -67,6 +67,7 @@ model Contact {
   invoices                            Invoice[]
   Invoice_Invoice_supplierIdToContact Invoice[]              @relation("Invoice_supplierIdToContact")
   RecurringTransaction                RecurringTransaction[]
+  ReceiptExpense                      ReceiptExpense[]
 }
 
 model Expense {
@@ -263,4 +264,24 @@ model BonusType {
   isActive  Boolean  @default(true)  // Aktif mi?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ReceiptExpense {
+  id             String    @id @default(cuid())
+  title          String
+  description    String?
+  amount         Decimal
+  expenseDate    DateTime
+  category       String    // Akaryakıt, Gıda, Ofis Malzemeleri vb.
+  receiptNumber  String?
+  taxRate        Decimal   @default(0)
+  taxAmount      Decimal   @default(0)
+  totalAmount    Decimal
+  paymentMethod  String    @default("cash")
+  supplierId     String?
+  receiptImageUrl String?
+  isVerified     Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  supplier       Contact?  @relation(fields: [supplierId], references: [id])
 }

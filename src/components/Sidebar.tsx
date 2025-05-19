@@ -24,6 +24,12 @@ const InvoicesIcon = () => (
   </svg>
 );
 
+const ReceiptsIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm4.707 3.707a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L8.414 9H10a3 3 0 013 3v1a1 1 0 102 0v-1a5 5 0 00-5-5H8.414l1.293-1.293z" clipRule="evenodd" />
+  </svg>
+);
+
 const ProductsIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
     <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" />
@@ -47,6 +53,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon },
   { name: 'Müşteriler', href: '/dashboard/customers', icon: CustomersIcon },
   { name: 'Faturalar', href: '/dashboard/invoices', icon: InvoicesIcon },
+  { name: 'Fiş Giderleri', href: '/dashboard/receipts', icon: ReceiptsIcon },
   { name: 'Ürünler', href: '/dashboard/products', icon: ProductsIcon },
   { name: 'Raporlar', href: '/dashboard/reports', icon: ReportsIcon },
   { name: 'Ayarlar', href: '/dashboard/settings', icon: SettingsIcon },
@@ -88,7 +95,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <nav className="flex-1 overflow-y-auto py-4">
             <ul className="px-3 space-y-1">
               {navigation.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const isActive = pathname ? (pathname === item.href || pathname.startsWith(`${item.href}/`)) : false;
                 
                 return (
                   <li key={item.name}>

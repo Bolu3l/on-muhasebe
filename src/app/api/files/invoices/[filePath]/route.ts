@@ -32,7 +32,7 @@ async function getInvoiceFilePath(fileId: string) {
     }
 
     console.log("Veritabanından getirilen dosya bilgisi:", invoiceFile);
-    return invoiceFile.filePath; // filePath alanı olduğunu varsayıyoruz
+    return invoiceFile.fileKey; // fileKey alanını kullan (filePath yerine)
   } catch (error) {
     console.error("Veritabanı sorgusu hatası:", error);
     throw error;

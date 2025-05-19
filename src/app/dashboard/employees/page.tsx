@@ -58,8 +58,31 @@ export default function EmployeesPage() {
     return matchesSearch && matchesDepartment;
   });
 
-  // Toplam maaş hesaplama
-  const totalSalary = filteredEmployees.reduce((sum, emp) => sum + emp.salary, 0);
+  // Toplam maaş hesaplama - güvenli hesaplama için
+  const totalSalary = filteredEmployees.reduce((sum, emp) => {
+    // Maaş değerini güvenli bir şekilde sayıya dönüştür
+    let salary = 0;
+    
+    if (typeof emp.salary === 'number') {
+      salary = emp.salary;
+    } else if (emp.salary !== null && emp.salary !== undefined) {
+      try {
+        // Herhangi bir değeri string'e çevirip sayıya dönüştürmeyi dene
+        const salaryStr = String(emp.salary);
+        salary = parseFloat(salaryStr);
+      } catch (e) {
+        console.warn('Maaş dönüştürme hatası:', e);
+      }
+    }
+    
+    // Geçersiz değer kontrolü
+    if (isNaN(salary) || !isFinite(salary)) {
+      console.warn('Geçersiz maaş değeri:', emp.name, emp.salary);
+      return sum;
+    }
+    
+    return sum + salary;
+  }, 0);
   
   return (
     <div className="space-y-6">

@@ -15,3 +15,15 @@ export function handleApiError(error: Error) {
     { status: 500 }
   );
 } 
+
+/**
+ * API isteklerindeki gerekli alanları doğrulayan yardımcı fonksiyon
+ */
+export function validateRequestData(data: any, requiredFields: string[]) {
+  const missingFields = requiredFields.filter(field => !data[field]);
+  
+  return {
+    isValid: missingFields.length === 0,
+    missingFields
+  };
+} 
