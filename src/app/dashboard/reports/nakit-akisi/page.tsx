@@ -2,56 +2,77 @@
 
 import { useState, useEffect } from "react";
 
-// Örnek nakit akışı veri seti
-const demoData = {
-  // Son 6 ay için gerçekleşen nakit akışı
-  past: [
-    { month: "Ocak", income: 48000, expense: 35000, balance: 13000 },
-    { month: "Şubat", income: 52000, expense: 38000, balance: 14000 },
-    { month: "Mart", income: 45000, expense: 36000, balance: 9000 },
-    { month: "Nisan", income: 55000, expense: 40000, balance: 15000 },
-    { month: "Mayıs", income: 60000, expense: 42000, balance: 18000 },
-    { month: "Haziran", income: 58000, expense: 43000, balance: 15000 }
-  ],
-  // Gelecek 6 ay için tahmin edilen nakit akışı
-  forecast: [
-    { month: "Temmuz", income: 62000, expense: 45000, balance: 17000 },
-    { month: "Ağustos", income: 65000, expense: 47000, balance: 18000 },
-    { month: "Eylül", income: 67000, expense: 48000, balance: 19000 },
-    { month: "Ekim", income: 70000, expense: 50000, balance: 20000 },
-    { month: "Kasım", income: 73000, expense: 52000, balance: 21000 },
-    { month: "Aralık", income: 78000, expense: 55000, balance: 23000 }
-  ],
-  // Vadesi gelen ödemeler
-  upcomingPayments: [
-    { id: 1, title: "KDV Ödemesi", amount: 12500, dueDate: "2023-07-26" },
-    { id: 2, title: "SGK Primi", amount: 8750, dueDate: "2023-07-30" },
-    { id: 3, title: "Kira Ödemesi", amount: 15000, dueDate: "2023-08-05" },
-    { id: 4, title: "Tedarikçi Ödemesi", amount: 24300, dueDate: "2023-08-15" }
-  ],
-  // Beklenen gelirler
-  expectedIncomes: [
-    { id: 1, title: "Müşteri Ödemesi - ABC Ltd.", amount: 32500, expectedDate: "2023-07-25" },
-    { id: 2, title: "Müşteri Ödemesi - XYZ A.Ş.", amount: 18750, expectedDate: "2023-08-03" },
-    { id: 3, title: "Kira Geliri", amount: 8000, expectedDate: "2023-08-10" }
-  ]
-};
-
 export default function NakitAkisiPage() {
   const [mounted, setMounted] = useState(false);
   const [timeRange, setTimeRange] = useState("12-month");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cashFlowData, setCashFlowData] = useState<any[]>([]);
+  const [upcomingPayments, setUpcomingPayments] = useState<any[]>([]);
+  const [expectedIncomes, setExpectedIncomes] = useState<any[]>([]);
+  const [pastDataLength, setPastDataLength] = useState(0);
+  
+  // API'den verileri çek
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/reports/cash-flow?period=${timeRange}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data) {
+          setCashFlowData([...(data.past || []), ...(data.forecast || [])]);
+          setUpcomingPayments(data.upcomingPayments || []);
+          setExpectedIncomes(data.expectedIncomes || []);
+          setPastDataLength(data.past?.length || 0);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Nakit akışı verileri yüklenirken hata:', err);
+        setError('Veriler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+        setLoading(false);
+      }
+    };
+    
+    if (mounted) {
+      fetchData();
+    }
+  }, [mounted, timeRange]);
   
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
-
-  // Nakit akışı grafiği için veriler
-  const cashFlowData = [...demoData.past, ...demoData.forecast];
   
   // Ay formatını kısaltma fonksiyonu
-  const formatMonth = (month: string) => month.substring(0, 3);
+  const formatMonth = (month: string) => month?.substring(0, 3) || '';
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 p-4 rounded-md">
+          <p className="text-red-700 dark:text-red-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -111,19 +132,21 @@ export default function NakitAkisiPage() {
             ))}
             
             {/* Geçmiş ve tahmin ayrımı */}
-            <div 
-              className="absolute h-full w-px bg-gray-400 dark:bg-gray-500 z-10"
-              style={{ left: `${(demoData.past.length / cashFlowData.length) * 100}%` }}
-            >
-              <div className="absolute top-0 -ml-14 text-xs text-gray-500 dark:text-gray-400">
-                Tahmin Başlangıcı
+            {cashFlowData.length > 0 && (
+              <div 
+                className="absolute h-full w-px bg-gray-400 dark:bg-gray-500 z-10"
+                style={{ left: `${(pastDataLength / cashFlowData.length) * 100}%` }}
+              >
+                <div className="absolute top-0 -ml-14 text-xs text-gray-500 dark:text-gray-400">
+                  Tahmin Başlangıcı
+                </div>
               </div>
-            </div>
+            )}
             
             {/* Barlar */}
             <div className="h-full flex">
               {cashFlowData.map((item, i) => {
-                const isForecasted = i >= demoData.past.length;
+                const isForecasted = i >= pastDataLength;
                 
                 return (
                   <div key={i} className="flex-1 flex flex-col justify-end h-full px-1">
@@ -186,17 +209,25 @@ export default function NakitAkisiPage() {
                 </tr>
               </thead>
               <tbody>
-                {demoData.upcomingPayments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="py-3 text-sm text-gray-800 dark:text-gray-300">{payment.title}</td>
-                    <td className="py-3 text-sm text-right font-medium text-red-600 dark:text-red-400">
-                      {payment.amount.toLocaleString('tr-TR')} ₺
-                    </td>
-                    <td className="py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {new Date(payment.dueDate).toLocaleDateString('tr-TR')}
+                {upcomingPayments.length > 0 ? (
+                  upcomingPayments.map((payment) => (
+                    <tr key={payment.id} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-3 text-sm text-gray-800 dark:text-gray-300">{payment.title}</td>
+                      <td className="py-3 text-sm text-right font-medium text-red-600 dark:text-red-400">
+                        {payment.amount.toLocaleString('tr-TR')} ₺
+                      </td>
+                      <td className="py-3 text-sm text-right text-gray-600 dark:text-gray-400">
+                        {new Date(payment.dueDate).toLocaleDateString('tr-TR')}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-4 text-center text-gray-500 dark:text-gray-400">
+                      Yaklaşan ödeme bulunmamaktadır
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -216,17 +247,25 @@ export default function NakitAkisiPage() {
                 </tr>
               </thead>
               <tbody>
-                {demoData.expectedIncomes.map((income) => (
-                  <tr key={income.id} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="py-3 text-sm text-gray-800 dark:text-gray-300">{income.title}</td>
-                    <td className="py-3 text-sm text-right font-medium text-green-600 dark:text-green-400">
-                      {income.amount.toLocaleString('tr-TR')} ₺
-                    </td>
-                    <td className="py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {new Date(income.expectedDate).toLocaleDateString('tr-TR')}
+                {expectedIncomes.length > 0 ? (
+                  expectedIncomes.map((income) => (
+                    <tr key={income.id} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-3 text-sm text-gray-800 dark:text-gray-300">{income.title}</td>
+                      <td className="py-3 text-sm text-right font-medium text-green-600 dark:text-green-400">
+                        {income.amount.toLocaleString('tr-TR')} ₺
+                      </td>
+                      <td className="py-3 text-sm text-right text-gray-600 dark:text-gray-400">
+                        {new Date(income.expectedDate).toLocaleDateString('tr-TR')}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-4 text-center text-gray-500 dark:text-gray-400">
+                      Beklenen gelir bulunmamaktadır
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -238,25 +277,34 @@ export default function NakitAkisiPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-base font-medium mb-1 dark:text-white">Toplam Beklenen Gelir</h2>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {demoData.forecast.reduce((sum, item) => sum + item.income, 0).toLocaleString('tr-TR')} ₺
+            {cashFlowData
+              .slice(pastDataLength)
+              .reduce((sum, item) => sum + (item.income || 0), 0)
+              .toLocaleString('tr-TR')} ₺
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gelecek 6 ay</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gelecek dönem</p>
         </div>
         
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-base font-medium mb-1 dark:text-white">Toplam Beklenen Gider</h2>
           <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {demoData.forecast.reduce((sum, item) => sum + item.expense, 0).toLocaleString('tr-TR')} ₺
+            {cashFlowData
+              .slice(pastDataLength)
+              .reduce((sum, item) => sum + (item.expense || 0), 0)
+              .toLocaleString('tr-TR')} ₺
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gelecek 6 ay</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gelecek dönem</p>
         </div>
         
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-base font-medium mb-1 dark:text-white">Tahmini Net Nakit Akışı</h2>
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {demoData.forecast.reduce((sum, item) => sum + item.balance, 0).toLocaleString('tr-TR')} ₺
+            {cashFlowData
+              .slice(pastDataLength)
+              .reduce((sum, item) => sum + (item.balance || 0), 0)
+              .toLocaleString('tr-TR')} ₺
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gelecek 6 ay</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gelecek dönem</p>
         </div>
       </div>
     </div>

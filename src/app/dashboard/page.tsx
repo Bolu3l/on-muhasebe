@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getDashboardData } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { DashboardData } from "@/lib/types";
-import { FaFileInvoice, FaMoneyBillWave, FaUserTie, FaCalendarAlt, FaChartPie } from 'react-icons/fa';
+import { DashboardData, TaxDuty } from "@/lib/types";
+import { FaFileInvoice, FaMoneyBillWave, FaUserTie, FaCalendarAlt, FaChartPie, FaReceipt, FaBalanceScale, FaExclamationTriangle, FaCalculator } from 'react-icons/fa';
 
 const StatCard = ({ title, value, subtext, icon, className = "" }: { title: string; value: string; subtext: string; icon: React.ReactNode, className?: string }) => (
   <div className={`bg-white dark:bg-dark-card p-6 rounded-lg shadow-sm border border-gray-200 dark:border-dark-border ${className}`}>
@@ -22,6 +22,46 @@ const StatCard = ({ title, value, subtext, icon, className = "" }: { title: stri
   </div>
 );
 
+// Vergi görevleri için bileşen
+const TaxDutyItem = ({ duty }: { duty: TaxDuty }) => {
+  // Durum renklerini belirle
+  const statusColors = {
+    upcoming: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-900/30',
+    due: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-900/30',
+    overdue: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-900/30',
+    paid: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-900/30',
+  };
+  
+  // Vergi türü için simge belirle
+  const taxTypeIcons = {
+    kdv: <FaReceipt className="mr-2" />,
+    gelir: <FaMoneyBillWave className="mr-2" />,
+    kurumlar: <FaBalanceScale className="mr-2" />,
+    damga: <FaFileInvoice className="mr-2" />,
+    muhtasar: <FaUserTie className="mr-2" />,
+    other: <FaExclamationTriangle className="mr-2" />
+  };
+  
+  return (
+    <div className={`p-3 border rounded-md mb-2 ${statusColors[duty.status]}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          {taxTypeIcons[duty.type] || taxTypeIcons.other}
+          <span className="font-medium">{duty.name}</span>
+        </div>
+        <span className="text-sm">
+          {formatDate(duty.dueDate)}
+        </span>
+      </div>
+      {duty.amount && (
+        <div className="mt-1 text-sm">
+          Tahmini Tutar: {formatCurrency(duty.amount)}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -32,33 +72,6 @@ export default function Dashboard() {
   const [receiptData, setReceiptData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Sabit test değerleri - veritabanı sorunları olsa bile en azından dashboard çalışsın
-  const testData = {
-    totalIncome: 15000,     // Test gelir değeri
-    totalExpense: 9500,     // Test gider değeri 
-    netProfit: 5500,        // Test kar değeri
-    pendingInvoices: {
-      count: 3,
-      total: 7500
-    },
-    recentTransactions: [
-      {
-        id: 'test-1',
-        date: new Date(),
-        description: 'Test Giden Fatura #1',
-        amount: 5000,
-        type: 'income'
-      },
-      {
-        id: 'test-2',
-        date: new Date(),
-        description: 'Test Gelen Fatura #1',
-        amount: 3000,
-        type: 'expense'
-      }
-    ]
-  };
   
   // Veritabanından verileri yükle
   useEffect(() => {
@@ -76,13 +89,11 @@ export default function Dashboard() {
             console.log(`${selectedPeriod} periyodu için dashboard verileri başarıyla yüklendi.`);
           } else {
             console.error(`${selectedPeriod} periyodu için dashboard verileri yüklenemedi.`);
-            // API hatası durumunda test verilerini kullan
-            setDashboardData(testData);
+            setError("Veriler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
           }
         } catch (err) {
           console.error("Dashboard verisi yüklenirken hata oluştu:", err);
-          // Hata durumunda test değerleri kullan
-          setDashboardData(testData);
+          setError("Veriler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
         }
         
         // Tüm faturaları al (gelir hesaplaması için outgoing faturaları kullanacağız)
@@ -193,7 +204,7 @@ export default function Dashboard() {
   }
 
   // Veri var, normal görünümü göster
-  const { pendingInvoices, recentTransactions, totalIncome, totalExpense, netProfit, details } = dashboardData;
+  const { pendingInvoices, recentTransactions, totalIncome, totalExpense, netProfit, details, taxSummary } = dashboardData;
   
   // Düzenli işlemler analizi (bu değerler filtrelenmemiş olabilir, sadece ek bilgi olarak gösteriliyor)
   const activeRecurring = recurringData.filter(item => item.isActive).length;
@@ -325,6 +336,110 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Vergi Yönetimi Kartı */}
+        <div className="bg-white dark:bg-dark-card p-6 rounded-lg shadow-sm border border-gray-200 dark:border-dark-border mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <Link href="/dashboard/taxes" className="group">
+                <h2 className="text-xl font-medium text-gray-900 dark:text-dark-text group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center">
+                  Vergi Yönetimi
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </h2>
+              </Link>
+            </div>
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+              <FaBalanceScale size={24} />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* KDV Özeti */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-900/30">
+              <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">KDV Özeti</p>
+              <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 mt-1">
+                {taxSummary ? formatCurrency(taxSummary.vatBalance) : "Hesaplanıyor..."}
+              </p>
+              <p className="text-xs text-blue-500 dark:text-blue-500 mt-1">
+                {taxSummary && `Tahsil Edilen: ${formatCurrency(taxSummary.vatCollected)} - Ödenen: ${formatCurrency(taxSummary.vatPaid)}`}
+              </p>
+              <p className="text-xs mt-2">
+                <span className="font-medium">Son Beyanname Tarihi:</span> {taxSummary?.vatDueDate ? formatDate(taxSummary.vatDueDate) : "Belirtilmemiş"}
+              </p>
+            </div>
+            
+            {/* Gelir Vergisi Tahmini */}
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-900/30">
+              <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">Gelir Vergisi Tahmini</p>
+              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300 mt-1">
+                {taxSummary ? formatCurrency(taxSummary.incomeTaxEstimate) : "Hesaplanıyor..."}
+              </p>
+              <p className="text-xs text-amber-500 dark:text-amber-500 mt-1">
+                {taxSummary && `Tahmini Vergi Oranı: ${Math.round((taxSummary.incomeTaxEstimate / netProfit) * 100 || 0)}%`}
+              </p>
+              <p className="text-xs mt-2">
+                <span className="font-medium">Beyanname Tarihi:</span> {new Date().getFullYear() + 1}.03.31
+              </p>
+            </div>
+
+            {/* Vergi Takvimi Özeti */}
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-900/30">
+              <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Vergi Takvimi</p>
+              <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 mt-1">
+                {taxSummary?.upcomingTaxes ? `${taxSummary.upcomingTaxes.length} Yaklaşan Görev` : "Yükleniyor..."}
+              </p>
+              <p className="text-xs text-purple-500 dark:text-purple-500 mt-1">
+                {taxSummary?.upcomingTaxes && taxSummary.upcomingTaxes.length > 0 && 
+                  `En yakın: ${taxSummary.upcomingTaxes[0].name} (${formatDate(taxSummary.upcomingTaxes[0].dueDate)})`
+                }
+              </p>
+              <Link href="/dashboard/taxes" className="text-xs font-medium text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 mt-2 inline-block">
+                Tüm Vergi Takvimini Görüntüle →
+              </Link>
+            </div>
+          </div>
+          
+          {/* Yaklaşan Vergi Görevleri */}
+          <div className="mt-4">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Yaklaşan Vergi Görevleri</h3>
+            {taxSummary?.upcomingTaxes && taxSummary.upcomingTaxes.length > 0 ? (
+              <div className="space-y-2">
+                {taxSummary.upcomingTaxes.map(duty => (
+                  <TaxDutyItem key={duty.id} duty={duty} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Yaklaşan vergi görevi bulunmamaktadır.</p>
+            )}
+          </div>
+          
+          {/* Vergi Hesaplama ve Beyanname Butonları */}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link 
+              href="/dashboard/taxes/calculator" 
+              className="inline-flex items-center px-4 py-2 border border-blue-300 dark:border-blue-700 rounded-md shadow-sm text-sm font-medium text-blue-700 dark:text-blue-400 bg-white dark:bg-dark-card hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:outline-none"
+            >
+              <FaCalculator className="mr-2" />
+              Vergi Hesaplama
+            </Link>
+            <Link 
+              href="/dashboard/reports/vergi-beyanname/kdv" 
+              className="inline-flex items-center px-4 py-2 border border-green-300 dark:border-green-700 rounded-md shadow-sm text-sm font-medium text-green-700 dark:text-green-400 bg-white dark:bg-dark-card hover:bg-green-50 dark:hover:bg-green-900/20 focus:outline-none"
+            >
+              <FaFileInvoice className="mr-2" />
+              KDV Beyannamesi Hazırla
+            </Link>
+            <Link 
+              href="/dashboard/reports/vergi-beyanname/gelir-vergisi" 
+              className="inline-flex items-center px-4 py-2 border border-amber-300 dark:border-amber-700 rounded-md shadow-sm text-sm font-medium text-amber-700 dark:text-amber-400 bg-white dark:bg-dark-card hover:bg-amber-50 dark:hover:bg-amber-900/20 focus:outline-none"
+            >
+              <FaMoneyBillWave className="mr-2" />
+              Gelir Vergisi Beyannamesi Hazırla
+            </Link>
+          </div>
+        </div>
+
         {/* İstatistik kartları - 2 sütunlu grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <StatCard 
@@ -418,7 +533,11 @@ export default function Dashboard() {
           <Link href="/dashboard/employees" className="flex items-center justify-center gap-2 p-4 bg-white dark:bg-dark-card rounded-lg border border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             <FaUserTie className="text-purple-500" />
             <span className="text-sm font-medium">Personel</span>
-            </Link>
+          </Link>
+          <Link href="/dashboard/taxes" className="flex items-center justify-center gap-2 p-4 bg-white dark:bg-dark-card rounded-lg border border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <FaBalanceScale className="text-amber-500" />
+            <span className="text-sm font-medium">Vergi Yönetimi</span>
+          </Link>
         </div>
       </div>
     </div>

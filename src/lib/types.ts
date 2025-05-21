@@ -127,4 +127,31 @@ export interface DashboardData {
     recurringIncome: number;
     recurringExpense: number;
   };
+  taxSummary?: {
+    vatCollected: number;
+    vatPaid: number;
+    vatBalance: number;
+    vatDueDate: Date | null;
+    incomeTaxEstimate: number;
+    upcomingTaxes: TaxDuty[];
+  };
+}
+
+export interface TaxDuty {
+  id: string;
+  name: string;
+  type: 'kdv' | 'gelir' | 'kurumlar' | 'damga' | 'muhtasar' | 'other';
+  dueDate: Date;
+  amount: number | null;
+  isPaid: boolean;
+  period: string; // Örn: "2023-Q1", "2023-05", vs.
+  status: 'upcoming' | 'due' | 'overdue' | 'paid';
+  notes?: string;
+}
+
+export interface TaxPeriod {
+  startDate: Date;
+  endDate: Date;
+  type: 'month' | 'quarter' | 'year';
+  label: string;
 } 

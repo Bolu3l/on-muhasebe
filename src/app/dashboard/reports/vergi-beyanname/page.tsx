@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 // Beyanname Kartı Bileşeni
 const TaxDeclarationCard = ({ 
@@ -111,7 +112,48 @@ const SummaryCard = ({
 
 export default function VergiBeyannamePage() {
   const [mounted, setMounted] = useState(false);
-  const [activeYear, setActiveYear] = useState("2023");
+  const [activeYear, setActiveYear] = useState(new Date().getFullYear().toString());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [taxData, setTaxData] = useState<any>({
+    taxCalendar: [],
+    summary: {
+      vatTotal: 0,
+      withholding: 0,
+      incomeTax: 0,
+      corporateTax: 0,
+      vatTrend: { percent: "0%", isUp: true },
+      withholdingTrend: { percent: "0%", isUp: true },
+      incomeTaxTrend: { percent: "0%", isUp: true },
+      corporateTaxTrend: { percent: "0%", isUp: false }
+    }
+  });
+  
+  // API'den vergi verilerini getir
+  useEffect(() => {
+    const fetchTaxData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/taxes/summary?year=${activeYear}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setTaxData(data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Vergi verileri yüklenirken hata oluştu:', err);
+        setError('Vergi verileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+        setLoading(false);
+      }
+    };
+    
+    if (mounted) {
+      fetchTaxData();
+    }
+  }, [mounted, activeYear]);
   
   useEffect(() => {
     setMounted(true);
@@ -119,39 +161,25 @@ export default function VergiBeyannamePage() {
 
   if (!mounted) return null;
 
-  // Vergi takvimi verileri
-  const taxCalendar = [
-    { 
-      month: "Ağustos", 
-      deadline: "26 Ağustos", 
-      title: "KDV Beyannamesi (Temmuz)", 
-      status: "completed" as const
-    },
-    { 
-      month: "Ağustos", 
-      deadline: "26 Ağustos", 
-      title: "Muhtasar Beyanname (Temmuz)", 
-      status: "completed" as const
-    },
-    { 
-      month: "Eylül", 
-      deadline: "26 Eylül", 
-      title: "KDV Beyannamesi (Ağustos)", 
-      status: "pending" as const
-    },
-    { 
-      month: "Eylül", 
-      deadline: "26 Eylül", 
-      title: "Muhtasar Beyanname (Ağustos)", 
-      status: "pending" as const
-    },
-    { 
-      month: "Ekim", 
-      deadline: "26 Ekim", 
-      title: "KDV Beyannamesi (Eylül)", 
-      status: "notRequired" as const
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 p-4 rounded-md">
+          <p className="text-red-700 dark:text-red-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -169,9 +197,14 @@ export default function VergiBeyannamePage() {
             value={activeYear}
             onChange={(e) => setActiveYear(e.target.value)}
           >
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
+            {[...Array(5)].map((_, i) => {
+              const year = new Date().getFullYear() - 2 + i;
+              return (
+                <option key={year} value={year.toString()}>
+                  {year}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
@@ -180,62 +213,50 @@ export default function VergiBeyannamePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <SummaryCard 
           title="Toplam Ödenen KDV" 
-          amount="45.250,00 ₺" 
-          period="2023 Yılı Toplam"
+          amount={formatCurrency(taxData.summary.vatTotal)}
+          period={`${activeYear} Yılı Toplam`}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
             </svg>
           }
-          trend={{
-            percent: "8.5%",
-            isUp: true
-          }}
+          trend={taxData.summary.vatTrend}
         />
         
         <SummaryCard 
           title="Toplam Ödenen Stopaj" 
-          amount="28.750,00 ₺" 
-          period="2023 Yılı Toplam"
+          amount={formatCurrency(taxData.summary.withholding)}
+          period={`${activeYear} Yılı Toplam`}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
             </svg>
           }
-          trend={{
-            percent: "5.2%",
-            isUp: true
-          }}
+          trend={taxData.summary.withholdingTrend}
         />
         
         <SummaryCard 
           title="Gelir Vergisi" 
-          amount="67.850,00 ₺" 
-          period="2023 Tahmini"
+          amount={formatCurrency(taxData.summary.incomeTax)}
+          period={`${activeYear} Tahmini`}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           }
-          trend={{
-            percent: "12.8%",
-            isUp: true
-          }}
+          trend={taxData.summary.incomeTaxTrend}
         />
         
         <SummaryCard 
           title="Kurumlar Vergisi" 
-          amount="92.300,00 ₺" 
-          period="2023 Tahmini"
+          amount={formatCurrency(taxData.summary.corporateTax)}
+          period={`${activeYear} Tahmini`}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           }
-          trend={{
-            percent: "3.7%",
-            isUp: false
-          }}
+          trend={taxData.summary.corporateTaxTrend}
         />
       </div>
       
@@ -250,8 +271,8 @@ export default function VergiBeyannamePage() {
             </svg>
           }
           link="/dashboard/reports/vergi-beyanname/kdv"
-          dueDate="26 Eylül 2023"
-          status="pending"
+          dueDate={taxData.nextDueDates?.kdv || "26 Eylül 2023"}
+          status={taxData.nextStatuses?.kdv || "pending"}
         />
         
         <TaxDeclarationCard
@@ -263,8 +284,8 @@ export default function VergiBeyannamePage() {
             </svg>
           }
           link="/dashboard/reports/vergi-beyanname/muhtasar"
-          dueDate="26 Eylül 2023"
-          status="pending"
+          dueDate={taxData.nextDueDates?.muhtasar || "26 Eylül 2023"}
+          status={taxData.nextStatuses?.muhtasar || "pending"}
         />
         
         <TaxDeclarationCard
@@ -276,8 +297,8 @@ export default function VergiBeyannamePage() {
             </svg>
           }
           link="/dashboard/reports/vergi-beyanname/gelir-vergisi"
-          dueDate="31 Mart 2024"
-          status="notRequired"
+          dueDate={taxData.nextDueDates?.gelir || "31 Mart 2024"}
+          status={taxData.nextStatuses?.gelir || "notRequired"}
         />
       </div>
       
@@ -285,90 +306,32 @@ export default function VergiBeyannamePage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
         <h2 className="text-lg font-medium mb-4 dark:text-white">Vergi Takvimi</h2>
         
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900 text-left">
-                <th className="py-3 px-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ay</th>
-                <th className="py-3 px-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Son Tarih</th>
-                <th className="py-3 px-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Beyanname</th>
-                <th className="py-3 px-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {taxCalendar.map((item, i) => {
-                const statusClasses = {
-                  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500",
-                  completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500",
-                  late: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500",
-                  notRequired: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
-                };
-                
-                const statusText = {
-                  pending: "Hazırlanması Gerekiyor",
-                  completed: "Tamamlandı",
-                  late: "Gecikmiş",
-                  notRequired: "Gerekli Değil"
-                };
-                
-                return (
-                  <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{item.month}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{item.deadline}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{item.title}</td>
-                    <td className="py-3 px-4 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[item.status]}`}>
-                        {statusText[item.status]}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-      {/* Vergi Bildirimleri */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-medium mb-4 dark:text-white">Vergi Duyuruları ve Değişiklikler</h2>
-        
         <div className="space-y-4">
-          <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-900/30">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">KDV Oranlarında Değişiklik</h3>
-                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                  <p>
-                    1 Ekim 2023 tarihinden itibaren bazı ürün ve hizmetlerde KDV oranları değişecektir. Beyannamelerinizi hazırlarken bu değişiklikleri göz önünde bulundurunuz.
-                  </p>
+          {taxData.taxCalendar && taxData.taxCalendar.length > 0 ? (
+            taxData.taxCalendar.map((item: any, index: number) => (
+              <div key={index} className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+                <div>
+                  <p className="text-sm font-medium dark:text-white">{item.title}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{item.month}</p>
+                </div>
+                <div className="flex items-center">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mr-4">{item.deadline}</p>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    item.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                    item.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                    item.status === 'late' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                    'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                  }`}>
+                    {item.status === 'completed' ? 'Tamamlandı' :
+                    item.status === 'pending' ? 'Bekliyor' :
+                    item.status === 'late' ? 'Gecikmiş' : 'Gerekli Değil'}
+                  </span>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-900/30">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">E-Beyanname Sistemi Bakımı</h3>
-                <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                  <p>
-                    Gelir İdaresi Başkanlığı, e-beyanname sisteminde 15-16 Eylül 2023 tarihlerinde bakım çalışması yapılacağını duyurmuştur. Bu tarihler arasında sistem erişime kapalı olacaktır.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500 dark:text-gray-400">Vergi takvimi bulunamadı.</p>
+          )}
         </div>
       </div>
     </div>

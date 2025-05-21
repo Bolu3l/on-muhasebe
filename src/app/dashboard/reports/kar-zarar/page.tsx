@@ -2,58 +2,73 @@
 
 import { useState, useEffect } from "react";
 
-// Örnek kâr/zarar verileri
-const demoData = {
-  // Aylık gelir, gider ve kâr verileri
-  monthly: [
-    { month: "Ocak", revenue: 120000, expenses: 85000, profit: 35000, profitMargin: 29.2 },
-    { month: "Şubat", revenue: 135000, expenses: 92000, profit: 43000, profitMargin: 31.9 },
-    { month: "Mart", revenue: 128000, expenses: 88000, profit: 40000, profitMargin: 31.3 },
-    { month: "Nisan", revenue: 142000, expenses: 96000, profit: 46000, profitMargin: 32.4 },
-    { month: "Mayıs", revenue: 156000, expenses: 103000, profit: 53000, profitMargin: 34.0 },
-    { month: "Haziran", revenue: 149000, expenses: 101000, profit: 48000, profitMargin: 32.2 }
-  ],
-  
-  // Kategori bazlı gelir dağılımı
-  revenueByCategory: [
-    { category: "Ürün Satışı", amount: 450000, percentage: 54 },
-    { category: "Hizmet Gelirleri", amount: 220000, percentage: 26 },
-    { category: "Danışmanlık", amount: 85000, percentage: 10 },
-    { category: "Diğer", amount: 75000, percentage: 9 }
-  ],
-  
-  // Kategori bazlı gider dağılımı
-  expensesByCategory: [
-    { category: "Personel", amount: 210000, percentage: 38 },
-    { category: "Operasyonel", amount: 175000, percentage: 31 },
-    { category: "Malzeme", amount: 95000, percentage: 17 },
-    { category: "Pazarlama", amount: 45000, percentage: 8 },
-    { category: "Diğer", amount: 35000, percentage: 6 }
-  ],
-  
-  // Ürün bazlı kârlılık
-  productProfitability: [
-    { product: "Ürün A", revenue: 195000, cost: 125000, profit: 70000, margin: 35.9 },
-    { product: "Ürün B", revenue: 145000, cost: 98000, profit: 47000, margin: 32.4 },
-    { product: "Ürün C", revenue: 110000, cost: 82000, profit: 28000, margin: 25.5 },
-    { product: "Ürün D", revenue: 85000, cost: 67000, profit: 18000, margin: 21.2 },
-    { product: "Ürün E", revenue: 75000, cost: 61000, profit: 14000, margin: 18.7 }
-  ]
-};
+// Örnek veriler kaldırıldı - gerçek API verileri kullanılıyor
 
 export default function KarZararPage() {
   const [mounted, setMounted] = useState(false);
   const [periodSelector, setPeriodSelector] = useState("monthly");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reportData, setReportData] = useState({
+    monthly: [],
+    revenueByCategory: [],
+    expensesByCategory: [],
+    productProfitability: []
+  });
+  
+  // API'den verileri çek
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/reports/profit-loss?period=${periodSelector}`);
+        if (!response.ok) {
+          throw new Error('Rapor verileri alınamadı');
+        }
+        const data = await response.json();
+        setReportData(data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Rapor verileri yüklenirken hata:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    
+    if (mounted) {
+      fetchData();
+    }
+  }, [mounted, periodSelector]);
   
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+  
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <p>Rapor verileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Toplam değerleri hesaplama
-  const totalRevenue = demoData.monthly.reduce((sum, month) => sum + month.revenue, 0);
-  const totalExpenses = demoData.monthly.reduce((sum, month) => sum + month.expenses, 0);
+  const totalRevenue = reportData.monthly.reduce((sum, month) => sum + month.revenue, 0);
+  const totalExpenses = reportData.monthly.reduce((sum, month) => sum + month.expenses, 0);
   const totalProfit = totalRevenue - totalExpenses;
   const avgProfitMargin = (totalProfit / totalRevenue) * 100;
 
@@ -172,7 +187,7 @@ export default function KarZararPage() {
               
               {/* Barlar */}
               <div className="h-full flex">
-                {demoData.monthly.map((item, i) => (
+                {reportData.monthly.map((item, i) => (
                   <div key={i} className="flex-1 flex flex-col justify-end h-full px-1">
                     {/* Gelir barı */}
                     <div 
@@ -252,8 +267,8 @@ export default function KarZararPage() {
               {/* Çizgi grafik */}
               <svg className="absolute inset-0" viewBox="0 0 100 100" preserveAspectRatio="none">
                 <polyline
-                  points={demoData.monthly.map((item, i) => 
-                    `${(i / (demoData.monthly.length - 1)) * 100}, ${100 - ((item.profitMargin / 40) * 100)}`
+                  points={reportData.monthly.map((item, i) => 
+                    `${(i / (reportData.monthly.length - 1)) * 100}, ${100 - ((item.profitMargin / 40) * 100)}`
                   ).join(' ')}
                   stroke="#10b981"
                   strokeWidth="3"
@@ -265,12 +280,12 @@ export default function KarZararPage() {
               
               {/* Nokta işaretçileri */}
               <div className="absolute inset-0">
-                {demoData.monthly.map((item, i) => (
+                {reportData.monthly.map((item, i) => (
                   <div 
                     key={i}
                     className="absolute w-3 h-3 bg-white border-2 border-green-500 rounded-full -translate-x-1/2 -translate-y-1/2"
                     style={{ 
-                      left: `${(i / (demoData.monthly.length - 1)) * 100}%`, 
+                      left: `${(i / (reportData.monthly.length - 1)) * 100}%`, 
                       top: `${100 - ((item.profitMargin / 40) * 100)}%` 
                     }}
                   ></div>
@@ -279,7 +294,7 @@ export default function KarZararPage() {
               
               {/* X ekseni etiketleri */}
               <div className="absolute bottom-0 inset-x-0 flex justify-between">
-                {demoData.monthly.map((item, i) => (
+                {reportData.monthly.map((item, i) => (
                   <div key={i} className="text-xs text-gray-500 dark:text-gray-400 text-center" style={{ transform: 'translateY(20px)' }}>
                     {item.month.substring(0, 3)}
                   </div>
@@ -298,7 +313,7 @@ export default function KarZararPage() {
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">En Yüksek</p>
                 <p className="text-lg font-semibold">
-                  %{Math.max(...demoData.monthly.map(item => item.profitMargin)).toFixed(1)}
+                  %{Math.max(...reportData.monthly.map(item => item.profitMargin)).toFixed(1)}
                 </p>
               </div>
             </div>
@@ -316,7 +331,7 @@ export default function KarZararPage() {
             {/* Pie chart */}
             <div className="relative h-40 w-40">
               <svg viewBox="0 0 100 100" className="h-full w-full">
-                {demoData.revenueByCategory.map((item, i, arr) => {
+                {reportData.revenueByCategory.map((item, i, arr) => {
                   const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
                   
                   // SVG pie chart slice hesaplama
@@ -357,7 +372,7 @@ export default function KarZararPage() {
             
             {/* Kategori listesi */}
             <div className="flex-1">
-              {demoData.revenueByCategory.map((item, i) => {
+              {reportData.revenueByCategory.map((item, i) => {
                 const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
                 return (
                   <div key={i} className="flex justify-between items-center mb-2">
@@ -383,7 +398,7 @@ export default function KarZararPage() {
             {/* Pie chart */}
             <div className="relative h-40 w-40">
               <svg viewBox="0 0 100 100" className="h-full w-full">
-                {demoData.expensesByCategory.map((item, i, arr) => {
+                {reportData.expensesByCategory.map((item, i, arr) => {
                   const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
                   
                   // SVG pie chart slice hesaplama
@@ -424,7 +439,7 @@ export default function KarZararPage() {
             
             {/* Kategori listesi */}
             <div className="flex-1">
-              {demoData.expensesByCategory.map((item, i) => {
+              {reportData.expensesByCategory.map((item, i) => {
                 const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
                 return (
                   <div key={i} className="flex justify-between items-center mb-2">
@@ -459,7 +474,7 @@ export default function KarZararPage() {
               </tr>
             </thead>
             <tbody>
-              {demoData.productProfitability.map((product, i) => (
+              {reportData.productProfitability.map((product, i) => (
                 <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
                   <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{product.product}</td>
                   <td className="py-3 px-4 text-sm text-right text-gray-800 dark:text-gray-300">
@@ -485,17 +500,17 @@ export default function KarZararPage() {
               <tr className="bg-gray-50 dark:bg-gray-900">
                 <td className="py-3 px-4 text-sm font-semibold text-gray-800 dark:text-gray-300">Toplam</td>
                 <td className="py-3 px-4 text-sm text-right font-semibold text-gray-800 dark:text-gray-300">
-                  {demoData.productProfitability.reduce((sum, product) => sum + product.revenue, 0).toLocaleString('tr-TR')} ₺
+                  {reportData.productProfitability.reduce((sum, product) => sum + product.revenue, 0).toLocaleString('tr-TR')} ₺
                 </td>
                 <td className="py-3 px-4 text-sm text-right font-semibold text-gray-800 dark:text-gray-300">
-                  {demoData.productProfitability.reduce((sum, product) => sum + product.cost, 0).toLocaleString('tr-TR')} ₺
+                  {reportData.productProfitability.reduce((sum, product) => sum + product.cost, 0).toLocaleString('tr-TR')} ₺
                 </td>
                 <td className="py-3 px-4 text-sm text-right font-semibold text-gray-800 dark:text-gray-300">
-                  {demoData.productProfitability.reduce((sum, product) => sum + product.profit, 0).toLocaleString('tr-TR')} ₺
+                  {reportData.productProfitability.reduce((sum, product) => sum + product.profit, 0).toLocaleString('tr-TR')} ₺
                 </td>
                 <td className="py-3 px-4 text-sm text-right font-semibold text-gray-800 dark:text-gray-300">
-                  %{(demoData.productProfitability.reduce((sum, product) => sum + product.profit, 0) / 
-                    demoData.productProfitability.reduce((sum, product) => sum + product.revenue, 0) * 100).toFixed(1)}
+                  %{(reportData.productProfitability.reduce((sum, product) => sum + product.profit, 0) / 
+                    reportData.productProfitability.reduce((sum, product) => sum + product.revenue, 0) * 100).toFixed(1)}
                 </td>
               </tr>
             </tfoot>

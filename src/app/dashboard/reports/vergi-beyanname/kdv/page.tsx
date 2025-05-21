@@ -3,50 +3,76 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-// KDV Hesap bilgileri için örnek veri
-const demoData = {
-  currentPeriod: {
-    year: 2023,
-    month: 8, // Ağustos
-    periodText: "2023/Ağustos",
-    dueDate: "26 Eylül 2023"
-  },
-  
-  // KDV Matrah ve vergi bildirimi
-  taxBase: [
-    { code: "1", description: "Mal ve Hizmet Teslimleri (%1)", rate: 1, base: 45000, tax: 450 },
-    { code: "2", description: "Mal ve Hizmet Teslimleri (%8)", rate: 8, base: 220000, tax: 17600 },
-    { code: "3", description: "Mal ve Hizmet Teslimleri (%18)", rate: 18, base: 350000, tax: 63000 },
-    { code: "4", description: "Mal ve Hizmet Teslimleri (%10)", rate: 10, base: 85000, tax: 8500 }
-  ],
-  
-  // İndirimler
-  deductions: [
-    { code: "40", description: "Önceki Dönemden Devreden KDV", amount: 22500 },
-    { code: "41", description: "Bu Dönem İndirilecek KDV", amount: 45000 },
-    { code: "42", description: "İade Edilmesi Gereken KDV", amount: 0 },
-    { code: "43", description: "Diğer", amount: 3500 }
-  ],
-  
-  // Önceki dönem bilgileri
-  previousPeriods: [
-    { period: "2023/Temmuz", base: 620000, tax: 75600, payment: 14500, status: "completed" },
-    { period: "2023/Haziran", base: 580000, tax: 68200, payment: 11300, status: "completed" },
-    { period: "2023/Mayıs", base: 610000, tax: 73800, payment: 12800, status: "completed" }
-  ]
-};
+// KDV Hesap bilgileri için API'den alınacak
+// Örnek veriler kaldırıldı - gerçek API verileri kullanılıyor
 
 export default function KdvBeyannamePage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
-  const [taxBase, setTaxBase] = useState(demoData.taxBase);
-  const [deductions, setDeductions] = useState(demoData.deductions);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [taxData, setTaxData] = useState(null);
+  const [taxBase, setTaxBase] = useState([]);
+  const [deductions, setDeductions] = useState([]);
+  const [currentPeriod, setCurrentPeriod] = useState({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth(),
+    periodText: `${new Date().getFullYear()}/${new Date().toLocaleString('tr-TR', { month: 'long' })}`,
+    dueDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 26).toLocaleDateString('tr-TR')
+  });
+  
+  // API'den verileri çek
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // URL parametrelerini kontrol et
+        const params = new URLSearchParams(window.location.search);
+        const period = params.get('period');
+        
+        const response = await fetch(`/api/taxes/vat${period ? `?period=${period}` : ''}`);
+        if (!response.ok) {
+          throw new Error('Vergi verileri alınamadı');
+        }
+        const data = await response.json();
+        setTaxData(data);
+        
+        if (data) {
+          setTaxBase(data.taxBase || []);
+          setDeductions(data.deductions || []);
+          if (data.currentPeriod) {
+            setCurrentPeriod(data.currentPeriod);
+          }
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Vergi verileri yüklenirken hata:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    
+    if (mounted) {
+      fetchData();
+    }
+  }, [mounted]);
   
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+  
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   // Toplam değerleri hesaplama
   const totalBase = taxBase.reduce((sum, item) => sum + item.base, 0);
@@ -72,7 +98,7 @@ export default function KdvBeyannamePage() {
                   <input 
                     type="text" 
                     className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    value={demoData.currentPeriod.periodText}
+                    value={currentPeriod.periodText}
                     readOnly
                   />
                 </div>
@@ -84,7 +110,7 @@ export default function KdvBeyannamePage() {
                   <input 
                     type="text" 
                     className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    value={demoData.currentPeriod.dueDate}
+                    value={currentPeriod.dueDate}
                     readOnly
                   />
                 </div>
@@ -299,11 +325,11 @@ export default function KdvBeyannamePage() {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Dönem:</span>
-                        <span className="text-sm font-medium text-gray-800 dark:text-gray-300">{demoData.currentPeriod.periodText}</span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-300">{currentPeriod.periodText}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Son Tarih:</span>
-                        <span className="text-sm font-medium text-gray-800 dark:text-gray-300">{demoData.currentPeriod.dueDate}</span>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-300">{currentPeriod.dueDate}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Durum:</span>
@@ -363,7 +389,7 @@ export default function KdvBeyannamePage() {
         <div>
           <h1 className="text-2xl font-bold dark:text-white">KDV Beyannamesi</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {demoData.currentPeriod.periodText} Dönemi
+            {currentPeriod.periodText} Dönemi
           </p>
         </div>
         
@@ -440,7 +466,7 @@ export default function KdvBeyannamePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {demoData.previousPeriods.map((period, i) => (
+                {taxData?.previousPeriods.map((period, i) => (
                   <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{period.period}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{period.base.toLocaleString('tr-TR')} ₺</td>

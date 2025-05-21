@@ -3,39 +3,73 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-// Örnek veri
-const demoData = {
-  currentPeriod: {
-    year: 2023,
-    month: 8,
-    periodText: "2023/Ağustos",
-    dueDate: "26 Eylül 2023"
-  },
-  
-  // Stopaj türleri
-  taxItems: [
-    { code: "01", description: "Hizmet Erbabına Ödenen Ücretler", grossAmount: 125000, taxRate: 15, taxAmount: 18750 },
-    { code: "03", description: "Serbest Meslek Ödemeleri", grossAmount: 45000, taxRate: 20, taxAmount: 9000 },
-    { code: "94", description: "Kira Ödemeleri", grossAmount: 18000, taxRate: 20, taxAmount: 3600 }
-  ],
-  
-  // Önceki dönem bilgileri
-  previousPeriods: [
-    { period: "2023/Temmuz", totalGross: 178000, totalTax: 30250, status: "completed" },
-    { period: "2023/Haziran", totalGross: 182000, totalTax: 31450, status: "completed" }
-  ]
-};
+// Örnek veriler kaldırıldı - gerçek API verileri kullanılıyor
 
 export default function MuhtasarBeyannamePage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
-  const [taxItems, setTaxItems] = useState(demoData.taxItems);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [taxItems, setTaxItems] = useState([]);
+  const [currentPeriod, setCurrentPeriod] = useState({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth(),
+    periodText: `${new Date().getFullYear()}/${new Date().toLocaleString('tr-TR', { month: 'long' })}`,
+    dueDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 26).toLocaleDateString('tr-TR')
+  });
+  const [previousPeriods, setPreviousPeriods] = useState([]);
+  
+  // API'den verileri çek
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // URL parametrelerini kontrol et
+        const params = new URLSearchParams(window.location.search);
+        const period = params.get('period');
+        
+        const response = await fetch(`/api/taxes/withholding${period ? `?period=${period}` : ''}`);
+        if (!response.ok) {
+          throw new Error('Vergi verileri alınamadı');
+        }
+        const data = await response.json();
+        
+        if (data) {
+          setTaxItems(data.taxItems || []);
+          setPreviousPeriods(data.previousPeriods || []);
+          if (data.currentPeriod) {
+            setCurrentPeriod(data.currentPeriod);
+          }
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Vergi verileri yüklenirken hata:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    
+    if (mounted) {
+      fetchData();
+    }
+  }, [mounted]);
   
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+  
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   // Toplam değerleri hesaplama
   const totalGross = taxItems.reduce((sum, item) => sum + item.grossAmount, 0);
@@ -47,7 +81,7 @@ export default function MuhtasarBeyannamePage() {
         <div>
           <h1 className="text-2xl font-bold dark:text-white">Muhtasar Beyanname</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {demoData.currentPeriod.periodText} Dönemi
+            {currentPeriod.periodText} Dönemi
           </p>
         </div>
         
@@ -120,7 +154,7 @@ export default function MuhtasarBeyannamePage() {
                 <input 
                   type="text" 
                   className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  value={demoData.currentPeriod.periodText}
+                  value={currentPeriod.periodText}
                   readOnly
                 />
               </div>
@@ -132,7 +166,7 @@ export default function MuhtasarBeyannamePage() {
                 <input 
                   type="text" 
                   className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  value={demoData.currentPeriod.dueDate}
+                  value={currentPeriod.dueDate}
                   readOnly
                 />
               </div>
@@ -161,7 +195,7 @@ export default function MuhtasarBeyannamePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {demoData.previousPeriods.map((period, i) => (
+                  {previousPeriods.map((period, i) => (
                     <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                       <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{period.period}</td>
                       <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{period.totalGross.toLocaleString('tr-TR')} ₺</td>
@@ -273,11 +307,11 @@ export default function MuhtasarBeyannamePage() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Dönem:</span>
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-300">{demoData.currentPeriod.periodText}</span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-300">{currentPeriod.periodText}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Son Tarih:</span>
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-300">{demoData.currentPeriod.dueDate}</span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-300">{currentPeriod.dueDate}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Durum:</span>

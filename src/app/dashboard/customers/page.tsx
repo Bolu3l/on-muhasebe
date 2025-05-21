@@ -23,75 +23,31 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
 
-  // Demo müşteri verileri
-  const demoCustomers: Customer[] = [
-    {
-      id: "CUST-001",
-      name: "Ahmet Yılmaz",
-      email: "ahmet@example.com",
-      phone: "0532 111 2233",
-      company: "ABC Teknoloji Ltd.",
-      address: "Levent, İstanbul",
-      status: "active",
-      total_invoiced: 24500,
-      date_added: "2023-01-15"
-    },
-    {
-      id: "CUST-002",
-      name: "Ayşe Demir",
-      email: "ayse@example.com",
-      phone: "0533 222 3344",
-      company: "XYZ Danışmanlık A.Ş.",
-      address: "Kadıköy, İstanbul",
-      status: "active",
-      total_invoiced: 18750,
-      date_added: "2023-02-20"
-    },
-    {
-      id: "CUST-003",
-      name: "Mehmet Kaya",
-      email: "mehmet@example.com",
-      phone: "0535 333 4455",
-      company: "123 Holding",
-      address: "Çankaya, Ankara",
-      status: "active",
-      total_invoiced: 32400,
-      date_added: "2023-03-10"
-    },
-    {
-      id: "CUST-004",
-      name: "Zeynep Şahin",
-      email: "zeynep@example.com",
-      phone: "0536 444 5566",
-      company: "Acme Ltd.",
-      address: "Konak, İzmir",
-      status: "inactive",
-      total_invoiced: 9800,
-      date_added: "2023-04-05"
-    },
-    {
-      id: "CUST-005",
-      name: "Mustafa Öztürk",
-      email: "mustafa@example.com",
-      phone: "0537 555 6677",
-      company: "Global Ticaret",
-      address: "Beyoğlu, İstanbul",
-      status: "active",
-      total_invoiced: 15200,
-      date_added: "2023-05-18"
-    }
-  ];
-
+  // API'den müşteri verilerini getir
   useEffect(() => {
-    setMounted(true);
+    const fetchCustomers = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/customers');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setCustomers(data.customers || []);
+        setFilteredCustomers(data.customers || []);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Müşteri verileri yüklenirken hata:', err);
+        setIsLoading(false);
+      }
+    };
     
-    // API simülasyonu
-    setTimeout(() => {
-      setCustomers(demoCustomers);
-      setFilteredCustomers(demoCustomers);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+    if (mounted) {
+      fetchCustomers();
+    }
+  }, [mounted]);
 
   // Arama fonksiyonu
   useEffect(() => {

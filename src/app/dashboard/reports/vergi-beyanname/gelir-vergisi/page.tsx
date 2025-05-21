@@ -12,35 +12,69 @@ const taxBrackets = [
   { min: 1900000, max: Infinity, rate: 40 }
 ];
 
-// Demo veri
-const demoData = {
-  year: 2023,
-  estimatedIncome: 320000,
-  expenses: [
-    { type: "Bağ-Kur Primleri", amount: 32000 },
-    { type: "İşyeri Kira Giderleri", amount: 48000 },
-    { type: "Sağlık Harcamaları", amount: 8500 },
-    { type: "Eğitim Harcamaları", amount: 12000 }
-  ],
-  advancePayments: [
-    { period: "1. Dönem (Ocak-Mart)", amount: 14500 },
-    { period: "2. Dönem (Nisan-Haziran)", amount: 15200 },
-    { period: "3. Dönem (Temmuz-Eylül)", amount: 16300 },
-    { period: "4. Dönem (Ekim-Aralık)", amount: 17500 }
-  ]
-};
+// Örnek veriler kaldırıldı - gerçek API verileri kullanılıyor
 
 export default function GelirVergisiPage() {
   const [mounted, setMounted] = useState(false);
-  const [income, setIncome] = useState(demoData.estimatedIncome);
-  const [expenses, setExpenses] = useState(demoData.expenses);
-  const [advancePayments, setAdvancePayments] = useState(demoData.advancePayments);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [income, setIncome] = useState(0);
+  const [expenses, setExpenses] = useState([]);
+  const [advancePayments, setAdvancePayments] = useState([]);
+  const [year, setYear] = useState(new Date().getFullYear());
+  
+  // API'den verileri çek
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // URL parametrelerini kontrol et
+        const params = new URLSearchParams(window.location.search);
+        const period = params.get('period');
+        
+        const response = await fetch(`/api/taxes/income${period ? `?period=${period}` : ''}`);
+        if (!response.ok) {
+          throw new Error('Vergi verileri alınamadı');
+        }
+        const data = await response.json();
+        
+        if (data) {
+          setIncome(data.estimatedIncome || 0);
+          setExpenses(data.expenses || []);
+          setAdvancePayments(data.advancePayments || []);
+          if (data.year) {
+            setYear(data.year);
+          }
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Vergi verileri yüklenirken hata:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    
+    if (mounted) {
+      fetchData();
+    }
+  }, [mounted]);
   
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+  
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   // Giderlerin toplamını hesaplama
   const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
@@ -83,7 +117,7 @@ export default function GelirVergisiPage() {
         <div>
           <h1 className="text-2xl font-bold dark:text-white">Gelir Vergisi Hesaplamaları</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {demoData.year} Yılı Tahmini Gelir Vergisi
+            {year} Yılı Tahmini Gelir Vergisi
           </p>
         </div>
         

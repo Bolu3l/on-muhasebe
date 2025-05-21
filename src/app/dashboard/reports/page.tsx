@@ -139,50 +139,41 @@ export default function ReportsPage() {
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeReport, setActiveReport] = useState<string | null>(null);
+  const [reportData, setReportData] = useState<any>({
+    sales: [],
+    categories: [],
+    customers: [],
+    growth: [],
+    payments: []
+  });
   
-  // Demo veri
-  const demoData = {
-    sales: [
-      { label: "Oca", value: 65 },
-      { label: "Şub", value: 59 },
-      { label: "Mar", value: 80 },
-      { label: "Nis", value: 81 },
-      { label: "May", value: 56 },
-      { label: "Haz", value: 55 },
-      { label: "Tem", value: 40 }
-    ],
-    categories: [
-      { label: "Teknoloji", value: 45 },
-      { label: "Hizmetler", value: 30 },
-      { label: "Ürünler", value: 15 },
-      { label: "Diğer", value: 10 }
-    ],
-    customers: [
-      { label: "Yeni", value: 25 },
-      { label: "Tekrarlayan", value: 75 }
-    ],
-    growth: [
-      { label: "Oca", value: 20 },
-      { label: "Şub", value: 35 },
-      { label: "Mar", value: 25 },
-      { label: "Nis", value: 45 },
-      { label: "May", value: 65 },
-      { label: "Haz", value: 48 },
-      { label: "Tem", value: 70 }
-    ],
-    payments: [
-      { label: "Nakit", value: 15 },
-      { label: "Kredi Kartı", value: 65 },
-      { label: "Banka Transferi", value: 20 }
-    ]
-  };
+  // API'den verileri çek
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/reports/summary');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setReportData(data);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Rapor verileri yüklenirken hata:', err);
+        setIsLoading(false);
+      }
+    };
+    
+    if (mounted) {
+      fetchData();
+    }
+  }, [mounted]);
 
   useEffect(() => {
     setMounted(true);
-    // API simülasyonu
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
   }, []);
 
   // Hydration sorunlarını önlemek için

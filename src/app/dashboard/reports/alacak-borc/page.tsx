@@ -2,71 +2,76 @@
 
 import { useState, useEffect } from "react";
 
-// Örnek alacak/borç verileri
-const demoData = {
-  // Alacaklar
-  receivables: [
-    { id: 1, customer: "ABC Ltd. Şti.", invoiceNumber: "FT2023-421", amount: 28500, issueDate: "2023-05-15", dueDate: "2023-07-15", status: "pending", daysOverdue: 0 },
-    { id: 2, customer: "XYZ A.Ş.", invoiceNumber: "FT2023-385", amount: 17200, issueDate: "2023-05-01", dueDate: "2023-06-15", status: "overdue", daysOverdue: 15 },
-    { id: 3, customer: "123 Tekstil", invoiceNumber: "FT2023-390", amount: 34000, issueDate: "2023-05-05", dueDate: "2023-06-05", status: "overdue", daysOverdue: 25 },
-    { id: 4, customer: "Tekno Market", invoiceNumber: "FT2023-410", amount: 12800, issueDate: "2023-05-10", dueDate: "2023-07-10", status: "pending", daysOverdue: 0 },
-    { id: 5, customer: "Global Ticaret", invoiceNumber: "FT2023-428", amount: 45000, issueDate: "2023-05-20", dueDate: "2023-08-20", status: "pending", daysOverdue: 0 },
-    { id: 6, customer: "Best İnşaat", invoiceNumber: "FT2023-442", amount: 67500, issueDate: "2023-05-30", dueDate: "2023-06-30", status: "pending", daysOverdue: 0 }
-  ],
-  
-  // Borçlar
-  payables: [
-    { id: 1, supplier: "Malzeme A.Ş.", invoiceNumber: "2023-1215", amount: 15700, issueDate: "2023-05-10", dueDate: "2023-06-10", status: "overdue", daysOverdue: 20 },
-    { id: 2, supplier: "Tedarik Ltd.", invoiceNumber: "2023-458", amount: 28900, issueDate: "2023-05-15", dueDate: "2023-07-15", status: "pending", daysOverdue: 0 },
-    { id: 3, supplier: "Mega Dağıtım", invoiceNumber: "2023-789", amount: 9800, issueDate: "2023-05-05", dueDate: "2023-06-05", status: "overdue", daysOverdue: 25 },
-    { id: 4, supplier: "Lojistik Pro", invoiceNumber: "2023-321", amount: 3500, issueDate: "2023-05-20", dueDate: "2023-06-20", status: "overdue", daysOverdue: 10 },
-    { id: 5, supplier: "Ofis Malzemeleri", invoiceNumber: "2023-654", amount: 2100, issueDate: "2023-05-25", dueDate: "2023-07-25", status: "pending", daysOverdue: 0 }
-  ],
-  
-  // Vade analizi - alacaklar
-  receivablesAgingBuckets: [
-    { range: "Vadesi Gelmemiş", amount: 125300, percentage: 60 },
-    { range: "1-30 Gün Geçmiş", amount: 51200, percentage: 25 },
-    { range: "31-60 Gün Geçmiş", amount: 22000, percentage: 10 },
-    { range: "61-90 Gün Geçmiş", amount: 9800, percentage: 5 },
-    { range: "90+ Gün Geçmiş", amount: 0, percentage: 0 }
-  ],
-  
-  // Vade analizi - borçlar
-  payablesAgingBuckets: [
-    { range: "Vadesi Gelmemiş", amount: 31000, percentage: 55 },
-    { range: "1-30 Gün Geçmiş", amount: 29000, percentage: 40 },
-    { range: "31-60 Gün Geçmiş", amount: 0, percentage: 0 },
-    { range: "61-90 Gün Geçmiş", amount: 0, percentage: 0 },
-    { range: "90+ Gün Geçmiş", amount: 0, percentage: 0 }
-  ],
-  
-  // Aylık ödemeler/tahsilatlar
-  monthlyPayments: [
-    { month: "Ocak", receivables: 85000, payables: 62000 },
-    { month: "Şubat", receivables: 92000, payables: 71000 },
-    { month: "Mart", receivables: 88000, payables: 67000 },
-    { month: "Nisan", receivables: 105000, payables: 74000 },
-    { month: "Mayıs", receivables: 115000, payables: 78000 },
-    { month: "Haziran", receivables: 96000, payables: 69000 },
-  ]
-};
+// Örnek veriler kaldırıldı - gerçek API verileri kullanılıyor
 
 export default function AlacakBorcPage() {
   const [mounted, setMounted] = useState(false);
   const [tabIndex, setTabIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reportData, setReportData] = useState({
+    receivables: [],
+    payables: [],
+    receivablesAgingBuckets: [],
+    payablesAgingBuckets: [],
+    monthlyPayments: []
+  });
+  
+  // API'den verileri çek
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/reports/receivables-payables');
+        if (!response.ok) {
+          throw new Error('Rapor verileri alınamadı');
+        }
+        const data = await response.json();
+        setReportData(data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Rapor verileri yüklenirken hata:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+    
+    if (mounted) {
+      fetchData();
+    }
+  }, [mounted]);
   
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+  
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <p>Rapor verileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Toplam alacak ve borç hesaplamaları
-  const totalReceivables = demoData.receivables.reduce((sum, item) => sum + item.amount, 0);
-  const totalPayables = demoData.payables.reduce((sum, item) => sum + item.amount, 0);
-  const overdueReceivables = demoData.receivables.filter(item => item.status === "overdue").reduce((sum, item) => sum + item.amount, 0);
-  const overduePayables = demoData.payables.filter(item => item.status === "overdue").reduce((sum, item) => sum + item.amount, 0);
+  const totalReceivables = reportData.receivables.reduce((sum, item) => sum + item.amount, 0);
+  const totalPayables = reportData.payables.reduce((sum, item) => sum + item.amount, 0);
+  const overdueReceivables = reportData.receivables.filter(item => item.status === "overdue").reduce((sum, item) => sum + item.amount, 0);
+  const overduePayables = reportData.payables.filter(item => item.status === "overdue").reduce((sum, item) => sum + item.amount, 0);
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -192,7 +197,7 @@ export default function AlacakBorcPage() {
                   
                   {/* Barlar */}
                   <div className="h-full flex">
-                    {demoData.monthlyPayments.map((item, i) => (
+                    {reportData.monthlyPayments.map((item, i) => (
                       <div key={i} className="flex-1 flex justify-center h-full px-1">
                         {/* Alacaklar barı */}
                         <div className="w-8 flex flex-col justify-end h-full">
@@ -242,7 +247,7 @@ export default function AlacakBorcPage() {
                 <h2 className="text-lg font-medium mb-4 dark:text-white">Alacak Vade Dağılımı</h2>
                 
                 <div className="space-y-4">
-                  {demoData.receivablesAgingBuckets.map((item, i) => (
+                  {reportData.receivablesAgingBuckets.map((item, i) => (
                     <div key={i}>
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-sm text-gray-600 dark:text-gray-400">{item.range}</span>
@@ -273,7 +278,7 @@ export default function AlacakBorcPage() {
                 <h2 className="text-lg font-medium mb-4 dark:text-white">Borç Vade Dağılımı</h2>
                 
                 <div className="space-y-4">
-                  {demoData.payablesAgingBuckets.map((item, i) => (
+                  {reportData.payablesAgingBuckets.map((item, i) => (
                     <div key={i}>
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-sm text-gray-600 dark:text-gray-400">{item.range}</span>
@@ -321,7 +326,7 @@ export default function AlacakBorcPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {demoData.receivables.map((item) => (
+                {reportData.receivables.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{item.customer}</td>
                     <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{item.invoiceNumber}</td>
@@ -381,7 +386,7 @@ export default function AlacakBorcPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {demoData.payables.map((item) => (
+                {reportData.payables.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{item.supplier}</td>
                     <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{item.invoiceNumber}</td>

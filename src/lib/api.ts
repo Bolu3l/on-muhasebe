@@ -3,7 +3,7 @@
 
 import { prisma } from './db';
 import { formatCurrency, convertDecimalFields } from './utils';
-import { DashboardData } from './types';
+import { DashboardData, TaxDuty, TaxPeriod } from './types';
 
 // Veritabanı bağlantısını kontrol et
 async function testDatabaseConnection() {
@@ -49,6 +49,354 @@ function isDateInRange(date: Date | null | undefined, startDate: Date, endDate: 
   
   // Tarih karşılaştırması yap (sadece gün, ay, yıl)
   return dateOnly >= startDateOnly && dateOnly <= endDateOnly;
+}
+
+// Vergi hesaplamaları için yardımcı fonksiyonlar
+export function calculateVAT(amount: number, vatRate: number): number {
+  return (amount * vatRate) / 100;
+}
+
+// Türkiye'deki vergi dönemlerini hesapla
+export function getTaxPeriods(year: number = new Date().getFullYear()): TaxPeriod[] {
+  const periods: TaxPeriod[] = [];
+  
+  // KDV için aylık dönemler (her ayın 1'i ile son günü arası)
+  for (let month = 0; month < 12; month++) {
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0); // Ayın son günü
+    
+    periods.push({
+      startDate,
+      endDate,
+      type: 'month',
+      label: `${startDate.toLocaleString('tr-TR', { month: 'long' })} ${year} KDV Dönemi`
+    });
+  }
+  
+  // Gelir vergisi için 3 aylık dönemler
+  for (let quarter = 0; quarter < 4; quarter++) {
+    const startDate = new Date(year, quarter * 3, 1);
+    const endDate = new Date(year, (quarter + 1) * 3, 0);
+    
+    periods.push({
+      startDate,
+      endDate,
+      type: 'quarter',
+      label: `${year} ${quarter + 1}. Çeyrek Gelir Vergisi`
+    });
+  }
+  
+  // Yıllık vergi dönemi
+  periods.push({
+    startDate: new Date(year, 0, 1),
+    endDate: new Date(year, 11, 31),
+    type: 'year',
+    label: `${year} Yıllık Vergi Dönemi`
+  });
+  
+  return periods;
+}
+
+// Vergi takvimi oluştur
+export function generateTaxCalendar(year: number = new Date().getFullYear()): TaxDuty[] {
+  const now = new Date();
+  const taxDuties: TaxDuty[] = [];
+  
+  // KDV beyannameleri (her ayın 26'sı)
+  for (let month = 0; month < 12; month++) {
+    // Bir önceki ayın KDV beyannamesi
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevMonthYear = month === 0 ? year - 1 : year;
+    const prevMonthName = new Date(prevMonthYear, prevMonth, 1).toLocaleString('tr-TR', { month: 'long' });
+    
+    const dueDate = new Date(year, month, 26);
+    const isPast = dueDate < now;
+    
+    taxDuties.push({
+      id: `kdv-${year}-${month + 1}`,
+      name: `${prevMonthName} Ayı KDV Beyannamesi`,
+      type: 'kdv',
+      dueDate,
+      amount: null, // Hesaplanacak
+      isPaid: isPast, // Geçmişse ödenmiş varsayalım
+      period: `${prevMonthYear}-${(prevMonth + 1).toString().padStart(2, '0')}`,
+      status: isPast ? 'paid' : (dueDate.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000 ? 'due' : 'upcoming')
+    });
+  }
+  
+  // Muhtasar beyanname (3 aylık)
+  const muhtasarMonths = [0, 3, 6, 9]; // Ocak, Nisan, Temmuz, Ekim
+  for (let i = 0; i < muhtasarMonths.length; i++) {
+    const month = muhtasarMonths[i];
+    const quarter = Math.floor(month / 3) + 1;
+    const dueDate = new Date(year, month, 26);
+    const isPast = dueDate < now;
+    
+    taxDuties.push({
+      id: `muhtasar-${year}-Q${quarter}`,
+      name: `${year} ${quarter}. Çeyrek Muhtasar Beyanname`,
+      type: 'muhtasar',
+      dueDate,
+      amount: null,
+      isPaid: isPast,
+      period: `${year}-Q${quarter}`,
+      status: isPast ? 'paid' : (dueDate.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000 ? 'due' : 'upcoming')
+    });
+  }
+  
+  // Gelir vergisi (yıllık)
+  const incomeTaxDueDate = new Date(year, 2, 31); // 31 Mart
+  const isPastIncomeTax = incomeTaxDueDate < now;
+  
+  taxDuties.push({
+    id: `gelir-${year}`,
+    name: `${year - 1} Yılı Gelir Vergisi Beyannamesi`,
+    type: 'gelir',
+    dueDate: incomeTaxDueDate,
+    amount: null,
+    isPaid: isPastIncomeTax,
+    period: `${year - 1}`,
+    status: isPastIncomeTax ? 'paid' : (incomeTaxDueDate.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000 ? 'due' : 'upcoming')
+  });
+  
+  return taxDuties;
+}
+
+// KDV hesapla (belirli bir dönem için)
+export async function calculateVATForPeriod(startDate: Date, endDate: Date): Promise<{collected: number, paid: number, balance: number}> {
+  try {
+    console.log(`KDV hesaplanıyor - Başlangıç: ${startDate.toISOString()}, Bitiş: ${endDate.toISOString()}`);
+    
+    // Giden faturalardan toplanan KDV - InvoiceItem tablosunu kullanmak yerine doğrudan faturalardan hesapla
+    const outgoingInvoices: any[] = await prisma.$queryRaw`
+      SELECT id, "invoiceNumber", "taxAmount"::numeric, "totalAmount"::numeric, "invoiceDate"
+      FROM "Invoice"
+      WHERE type = 'outgoing' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
+    `;
+    
+    // Gelen faturalardan ödenen KDV - InvoiceItem tablosunu kullanmak yerine doğrudan faturalardan hesapla
+    const incomingInvoices: any[] = await prisma.$queryRaw`
+      SELECT id, "invoiceNumber", "taxAmount"::numeric, "totalAmount"::numeric, "invoiceDate"
+      FROM "Invoice"
+      WHERE type = 'incoming' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
+    `;
+    
+    // Fiş giderlerinden ödenen KDV
+    const receipts: any[] = await prisma.$queryRaw`
+      SELECT id, "taxRate", "taxAmount"::numeric, "expenseDate"
+      FROM "ReceiptExpense"
+      WHERE "expenseDate" >= ${startDate} AND "expenseDate" <= ${endDate}
+    `;
+    
+    console.log(`Bulunan faturalar: ${outgoingInvoices.length} giden, ${incomingInvoices.length} gelen`);
+    console.log(`Bulunan fiş giderleri: ${receipts.length}`);
+    
+    // Toplanan KDV hesapla
+    const vatCollected = outgoingInvoices.reduce((total, invoice) => {
+      const taxAmount = parseFloat(invoice.taxAmount || 0);
+      console.log(`Giden fatura #${invoice.invoiceNumber}, Tarih: ${invoice.invoiceDate}, KDV: ${taxAmount}`);
+      return total + taxAmount;
+    }, 0);
+    
+    // Ödenen KDV hesapla (faturalar + fişler)
+    const vatPaidInvoices = incomingInvoices.reduce((total, invoice) => {
+      const taxAmount = parseFloat(invoice.taxAmount || 0);
+      console.log(`Gelen fatura #${invoice.invoiceNumber}, Tarih: ${invoice.invoiceDate}, KDV: ${taxAmount}`);
+      return total + taxAmount;
+    }, 0);
+    
+    const vatPaidReceipts = receipts.reduce((total, receipt) => {
+      return total + parseFloat(receipt.taxAmount || 0);
+    }, 0);
+    
+    const vatPaid = vatPaidInvoices + vatPaidReceipts;
+    
+    // KDV dengesi (pozitif ise devlete ödenecek, negatif ise devletten alınacak)
+    const vatBalance = vatCollected - vatPaid;
+    
+    console.log(`KDV hesaplama sonuçları - Tahsil: ${vatCollected}, Ödenen: ${vatPaid}, Bakiye: ${vatBalance}`);
+    
+    return {
+      collected: vatCollected,
+      paid: vatPaid,
+      balance: vatBalance
+    };
+  } catch (error) {
+    console.error('KDV hesaplama hatası:', error);
+    return {
+      collected: 0,
+      paid: 0,
+      balance: 0
+    };
+  }
+}
+
+// Gelir vergisi tahmini hesapla
+export async function estimateIncomeTax(year: number = new Date().getFullYear()): Promise<number> {
+  try {
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year, 11, 31);
+    
+    // Tüm gelirleri topla
+    const totalIncome = await calculateTotalIncomeForPeriod(startDate, endDate);
+    
+    // Tüm giderleri topla
+    const totalExpense = await calculateTotalExpenseForPeriod(startDate, endDate);
+    
+    // Net kar
+    const netProfit = totalIncome - totalExpense;
+    
+    // Basit bir gelir vergisi tahmini (gerçek hesaplama daha karmaşık olabilir)
+    // Türkiye'deki gelir vergisi dilimleri (2023 yılı için)
+    let incomeTax = 0;
+    
+    if (netProfit <= 70000) {
+      incomeTax = netProfit * 0.15;
+    } else if (netProfit <= 150000) {
+      incomeTax = 10500 + (netProfit - 70000) * 0.20;
+    } else if (netProfit <= 550000) {
+      incomeTax = 26500 + (netProfit - 150000) * 0.27;
+    } else if (netProfit <= 1900000) {
+      incomeTax = 134500 + (netProfit - 550000) * 0.35;
+    } else {
+      incomeTax = 607000 + (netProfit - 1900000) * 0.40;
+    }
+    
+    return incomeTax;
+  } catch (error) {
+    console.error('Gelir vergisi tahmini hesaplama hatası:', error);
+    return 0;
+  }
+}
+
+// Belirli bir dönem için toplam gelir hesapla
+async function calculateTotalIncomeForPeriod(startDate: Date, endDate: Date): Promise<number> {
+  try {
+    // Giden faturalardan gelirler
+    const invoiceIncome: any = await prisma.$queryRaw`
+      SELECT SUM("totalAmount"::numeric) as total
+      FROM "Invoice"
+      WHERE type = 'outgoing' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
+    `;
+    
+    // Düzenli gelirler
+    const recurringIncome: any = await prisma.$queryRaw`
+      SELECT SUM(amount::numeric) as total
+      FROM "RecurringTransaction"
+      WHERE type = 'income' AND "isActive" = true AND "startDate" <= ${endDate}
+    `;
+    
+    const totalInvoiceIncome = parseFloat(invoiceIncome[0]?.total || 0);
+    const totalRecurringIncome = parseFloat(recurringIncome[0]?.total || 0);
+    
+    return totalInvoiceIncome + totalRecurringIncome;
+  } catch (error) {
+    console.error('Gelir hesaplama hatası:', error);
+    return 0;
+  }
+}
+
+// Belirli bir dönem için toplam gider hesapla
+async function calculateTotalExpenseForPeriod(startDate: Date, endDate: Date): Promise<number> {
+  try {
+    // Gelen faturalardan giderler
+    const invoiceExpense: any = await prisma.$queryRaw`
+      SELECT SUM("totalAmount"::numeric) as total
+      FROM "Invoice"
+      WHERE type = 'incoming' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
+    `;
+    
+    // Doğrudan giderler
+    const directExpense: any = await prisma.$queryRaw`
+      SELECT SUM(amount::numeric) as total
+      FROM "Expense"
+      WHERE "expenseDate" >= ${startDate} AND "expenseDate" <= ${endDate}
+    `;
+    
+    // Fiş giderleri
+    const receiptExpense: any = await prisma.$queryRaw`
+      SELECT SUM("totalAmount"::numeric) as total
+      FROM "ReceiptExpense"
+      WHERE "expenseDate" >= ${startDate} AND "expenseDate" <= ${endDate}
+    `;
+    
+    // Düzenli giderler
+    const recurringExpense: any = await prisma.$queryRaw`
+      SELECT SUM(amount::numeric) as total
+      FROM "RecurringTransaction"
+      WHERE type = 'expense' AND "isActive" = true AND "startDate" <= ${endDate}
+    `;
+    
+    const totalInvoiceExpense = parseFloat(invoiceExpense[0]?.total || 0);
+    const totalDirectExpense = parseFloat(directExpense[0]?.total || 0);
+    const totalReceiptExpense = parseFloat(receiptExpense[0]?.total || 0);
+    const totalRecurringExpense = parseFloat(recurringExpense[0]?.total || 0);
+    
+    return totalInvoiceExpense + totalDirectExpense + totalReceiptExpense + totalRecurringExpense;
+  } catch (error) {
+    console.error('Gider hesaplama hatası:', error);
+    return 0;
+  }
+}
+
+// Vergi özeti hesapla ve dashboard verilerine ekle
+export async function getTaxSummaryForDashboard(period: 'week' | 'month' | 'year'): Promise<any> {
+  try {
+    // Dönem tarih aralığını hesapla
+    const now = new Date();
+    let startDate = new Date();
+    
+    switch (period) {
+      case 'week':
+        const currentDay = startDate.getDay();
+        const daysToSubtract = currentDay === 0 ? 6 : currentDay - 1;
+        startDate.setDate(startDate.getDate() - daysToSubtract);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+    }
+    
+    // Seçilen dönem için KDV hesapla
+    const vatData = await calculateVATForPeriod(startDate, now);
+    
+    // Gelir vergisi tahmini
+    const incomeTaxEstimate = await estimateIncomeTax(now.getFullYear());
+    
+    // Yaklaşan vergi görevleri
+    const allTaxDuties = generateTaxCalendar(now.getFullYear());
+    const upcomingTaxes = allTaxDuties.filter(tax => 
+      tax.status === 'upcoming' || tax.status === 'due'
+    ).slice(0, 5); // En yakın 5 vergi görevi
+    
+    // KDV beyanname tarihi (bir sonraki ay 26'sı)
+    const nextMonth = now.getMonth() + 1;
+    const nextMonthYear = nextMonth === 12 ? now.getFullYear() + 1 : now.getFullYear();
+    const vatDueDate = new Date(nextMonthYear, nextMonth % 12, 26);
+    
+    return {
+      vatCollected: vatData.collected,
+      vatPaid: vatData.paid,
+      vatBalance: vatData.balance,
+      vatDueDate,
+      incomeTaxEstimate,
+      upcomingTaxes
+    };
+  } catch (error) {
+    console.error('Vergi özeti hesaplama hatası:', error);
+    return {
+      vatCollected: 0,
+      vatPaid: 0,
+      vatBalance: 0,
+      vatDueDate: null,
+      incomeTaxEstimate: 0,
+      upcomingTaxes: []
+    };
+  }
 }
 
 // Dashboard verilerini getir
@@ -329,6 +677,9 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
       }))
     ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
     
+    // Vergi özeti hesapla
+    const taxSummary = await getTaxSummaryForDashboard(period);
+    
     // Sonucu hazırla
     const result = {
       totalIncome,
@@ -344,7 +695,8 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         receiptAmount: totalReceiptAmount,
         recurringIncome: totalRecurringIncome,
         recurringExpense: totalRecurringExpense
-      }
+      },
+      taxSummary // Vergi özetini ekle
     };
     
     return result;
@@ -362,7 +714,15 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         count: 0,
         total: 0
       },
-      recentTransactions: []
+      recentTransactions: [],
+      taxSummary: {
+        vatCollected: 0,
+        vatPaid: 0,
+        vatBalance: 0,
+        vatDueDate: null,
+        incomeTaxEstimate: 0,
+        upcomingTaxes: []
+      }
     };
   }
 }
