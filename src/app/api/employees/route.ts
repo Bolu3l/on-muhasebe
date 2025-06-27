@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { EmployeeStatus } from "@prisma/client";
 
-// POST - Yeni çalışan ekle (Decimal olmadan)
+// Prisma import yok - sadece test için
+
+// POST - Yeni çalışan ekle (Prisma olmadan test)
 export async function POST(req: NextRequest) {
   try {
-    console.log('Employee POST API çağrıldı (backup versiyon)');
+    console.log('Employee POST API çağrıldı (Prisma olmadan)');
     
     const body = await req.json();
     console.log('Gelen form verisi:', JSON.stringify(body, null, 2));
@@ -35,44 +35,58 @@ export async function POST(req: NextRequest) {
     const startDate = new Date(body.startDate);
     console.log('Start date:', startDate);
 
-    // Yeni çalışan oluştur - Decimal yerine direkt number kullan
-    console.log('Prisma create işlemi başlatılıyor (sayı olarak)...');
-    const employeeData = {
+    // Mock çalışan verisi döndür - Prisma create yapmadan
+    console.log('Mock çalışan verisi oluşturuluyor...');
+    const mockEmployee = {
+      id: 'mock-' + Date.now(),
       name: body.name,
       position: body.position,
       department: body.department,
-      startDate: startDate,
-      salary: salaryNumber, // Direkt number
+      startDate: startDate.toISOString(),
+      salary: salaryNumber,
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
       taxId: body.taxId || null,
       socialSecurityNumber: body.socialSecurityNumber || null,
       bankAccount: body.bankAccount || null,
-      status: EmployeeStatus.ACTIVE // Enum kullan
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     
-    console.log('Employee data:', JSON.stringify(employeeData, null, 2));
-    
-    const employee = await prisma.employee.create({
-      data: employeeData
-    });
-
-    console.log('Çalışan başarıyla oluşturuldu:', employee.id);
-    return NextResponse.json(employee, { status: 201 });
+    console.log('Mock çalışan oluşturuldu:', mockEmployee.id);
+    return NextResponse.json(mockEmployee, { status: 201 });
     
   } catch (error) {
-    console.error("Çalışan eklenirken DETAYLI hata:", error);
+    console.error("API GENEL HATA:", error);
     console.error("Hata mesajı:", error instanceof Error ? error.message : 'Bilinmeyen hata');
     console.error("Hata stack:", error instanceof Error ? error.stack : 'Stack yok');
     
     return NextResponse.json(
       { 
-        error: "Çalışan eklenirken bir hata oluştu",
+        error: "API çalışırken bir hata oluştu",
         details: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : null
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     );
+  }
+}
+
+// GET endpoint de ekleyelim
+export async function GET() {
+  try {
+    return NextResponse.json({
+      status: "success",
+      message: "Employee API çalışıyor",
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return NextResponse.json({
+      status: "error",
+      message: "GET API hatası",
+      error: String(error)
+    }, { status: 500 });
   }
 } 
