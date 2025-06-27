@@ -8,8 +8,8 @@ export const invoiceOperations = {
       .from('Invoice')
       .select(`
         *,
-        customer:Contact(*),
-        supplier:Contact(*),
+        customer:Contact!Invoice_customerId_fkey(*),
+        supplier:Contact!Invoice_supplierId_fkey(*),
         items:InvoiceItem(*),
         files:InvoiceFile(*)
       `)

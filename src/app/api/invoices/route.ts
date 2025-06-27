@@ -22,9 +22,19 @@ export async function GET() {
     
     return NextResponse.json(processedInvoices);
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Faturalar API hatası:', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    console.error('Error type:', typeof error);
+    console.error('Error toString:', error?.toString());
+    console.error('Error JSON:', JSON.stringify(error, null, 2));
+    
+    return NextResponse.json({ 
+      error: error?.message || error?.toString() || 'Bilinmeyen hata',
+      errorType: typeof error,
+      errorString: error?.toString(),
+      errorJSON: JSON.stringify(error, null, 2),
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 }
 
