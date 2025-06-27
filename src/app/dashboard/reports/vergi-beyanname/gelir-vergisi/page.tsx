@@ -17,10 +17,10 @@ const taxBrackets = [
 export default function GelirVergisiPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [income, setIncome] = useState(0);
-  const [expenses, setExpenses] = useState([]);
-  const [advancePayments, setAdvancePayments] = useState([]);
+  const [expenses, setExpenses] = useState<Array<{ type: string; amount: number; [key: string]: any }>>([]);
+  const [advancePayments, setAdvancePayments] = useState<Array<{ period: string; amount: number; [key: string]: any }>>([]);
   const [year, setYear] = useState(new Date().getFullYear());
   
   // API'den verileri çek
@@ -50,7 +50,7 @@ export default function GelirVergisiPage() {
         setLoading(false);
       } catch (err) {
         console.error('Vergi verileri yüklenirken hata:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Bilinmeyen bir hata oluştu');
         setLoading(false);
       }
     };
