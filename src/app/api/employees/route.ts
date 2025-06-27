@@ -31,6 +31,12 @@ export async function POST(req: NextRequest) {
   try {
     console.log('Employee POST API çağrıldı - Database\'e kaydediliyor');
     
+    // Environment variables debug
+    console.log('DEBUG - Environment Check:');
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('DATABASE_URL prefix:', process.env.DATABASE_URL?.substring(0, 20) + '...');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    
     const body = await req.json();
     console.log('Gelen form verisi:', JSON.stringify(body, null, 2));
     
@@ -59,6 +65,16 @@ export async function POST(req: NextRequest) {
     const startDate = new Date(body.startDate);
     console.log('Start date:', startDate);
 
+    // Database connection test
+    console.log('Database connection test başlatılıyor...');
+    try {
+      await prisma.$connect();
+      console.log('Database connection başarılı');
+    } catch (connectionError) {
+      console.error('Database connection hatası:', connectionError);
+      throw new Error(`Database connection failed: ${connectionError}`);
+    }
+
     // Gerçek çalışan database'e kaydet
     console.log('Prisma create işlemi başlatılıyor...');
     const employeeData = {
@@ -86,15 +102,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(employee, { status: 201 });
     
   } catch (error) {
-    console.error("Employee database kayıt hatası:", error);
-    console.error("Hata mesajı:", error instanceof Error ? error.message : 'Bilinmeyen hata');
-    console.error("Hata stack:", error instanceof Error ? error.stack : 'Stack yok');
+    console.error("DEBUG: Catch bloğu: Çalışan database'e kaydedilirken bir hata oluştu");
+    console.error("DEBUG: Error type:", typeof error);
+    console.error("DEBUG: Error constructor:", error?.constructor?.name);
+    console.error("DEBUG: Error obj:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    console.error("DEBUG: Error message:", error instanceof Error ? error.message : 'Error message yok');
+    console.error("DEBUG: Error stack:", error instanceof Error ? error.stack : 'Stack trace yok');
+    console.error("DEBUG: String(error):", String(error));
+    
+    // Prisma-specific error handling
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error("DEBUG: Prisma error code:", (error as any).code);
+      console.error("DEBUG: Prisma error meta:", (error as any).meta);
+    }
     
     return NextResponse.json(
       { 
         error: "Çalışan database'e kaydedilirken bir hata oluştu",
         details: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
+        errorType: typeof error,
+        errorConstructor: error?.constructor?.name,
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        databaseUrlExists: !!process.env.DATABASE_URL
       },
       { status: 500 }
     );
