@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Decimal } from "@prisma/client/runtime/library";
 
 // GET - Tüm çalışanları getir
 export async function GET(req: NextRequest) {
@@ -34,13 +35,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Maaşı sayısal değere dönüştür
-    const salary = parseFloat(body.salary);
-    if (isNaN(salary)) {
+    const salaryNumber = parseFloat(body.salary);
+    if (isNaN(salaryNumber)) {
       return NextResponse.json(
         { error: "Maaş geçerli bir sayı olmalıdır" },
         { status: 400 }
       );
     }
+
+    // Decimal tipini kullan
+    const salaryDecimal = new Decimal(salaryNumber);
 
     // Yeni çalışan oluştur
     const employee = await prisma.employee.create({
@@ -49,7 +53,7 @@ export async function POST(req: NextRequest) {
         position: body.position,
         department: body.department,
         startDate: new Date(body.startDate),
-        salary,
+        salary: salaryDecimal,
         email: body.email || null,
         phone: body.phone || null,
         address: body.address || null,
