@@ -2,6 +2,62 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Prisma import yok - sadece test için
 
+// Mock data 
+const mockEmployees = [
+  {
+    id: 'emp-1',
+    name: 'Ahmet Yılmaz',
+    position: 'Muhasebeci',
+    department: 'Muhasebe',
+    startDate: '2023-01-15',
+    salary: 15000,
+    email: 'ahmet@example.com',
+    phone: '555-0101',
+    address: 'İstanbul',
+    taxId: '12345678901',
+    socialSecurityNumber: '123456789',
+    bankAccount: 'TR123456789',
+    status: 'ACTIVE',
+    createdAt: '2023-01-15T10:00:00Z',
+    updatedAt: '2023-01-15T10:00:00Z'
+  },
+  {
+    id: 'emp-2',
+    name: 'Ayşe Demir',
+    position: 'Satış Temsilcisi',
+    department: 'Satış',
+    startDate: '2023-03-20',
+    salary: 12000,
+    email: 'ayse@example.com',
+    phone: '555-0102',
+    address: 'Ankara',
+    taxId: '12345678902',
+    socialSecurityNumber: '123456790',
+    bankAccount: 'TR123456790',
+    status: 'ACTIVE',
+    createdAt: '2023-03-20T10:00:00Z',
+    updatedAt: '2023-03-20T10:00:00Z'
+  }
+];
+
+// GET endpoint - Mock employees listesi döndür
+export async function GET() {
+  try {
+    console.log('Employee GET API çağrıldı');
+    
+    // Mock data döndür
+    return NextResponse.json(mockEmployees);
+    
+  } catch (error) {
+    console.error("Employee GET API hatası:", error);
+    return NextResponse.json({
+      status: "error",
+      message: "Employees GET API hatası",
+      error: String(error)
+    }, { status: 500 });
+  }
+}
+
 // POST - Yeni çalışan ekle (Prisma olmadan test)
 export async function POST(req: NextRequest) {
   try {
@@ -71,22 +127,5 @@ export async function POST(req: NextRequest) {
       },
       { status: 500 }
     );
-  }
-}
-
-// GET endpoint de ekleyelim
-export async function GET() {
-  try {
-    return NextResponse.json({
-      status: "success",
-      message: "Employee API çalışıyor",
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    return NextResponse.json({
-      status: "error",
-      message: "GET API hatası",
-      error: String(error)
-    }, { status: 500 });
   }
 } 
