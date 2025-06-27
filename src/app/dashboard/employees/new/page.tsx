@@ -86,9 +86,12 @@ export default function NewEmployeePage() {
         throw new Error(data.error || 'Personel kaydedilirken bir hata oluştu');
       }
       
-      setDebugInfo('Başarılı! Yönlendiriliyor...');
-      // Başarılı kayıt sonrası liste sayfasına yönlendir
-      router.push("/dashboard/employees");
+      setDebugInfo(`BAŞARILI! API Response: ${JSON.stringify(data)} - Employee ID: ${data.id || 'ID yok'}`);
+      
+      // Başarılı kayıt sonrası 2 saniye bekle, sonra yönlendir
+      setTimeout(() => {
+        router.push("/dashboard/employees");
+      }, 2000);
       
     } catch (error) {
       console.error("Personel eklenirken hata oluştu:", error);
