@@ -466,7 +466,7 @@ export default function KdvBeyannamePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {taxData?.previousPeriods.map((period, i) => (
+                {taxData?.previousPeriods.map((period: { period: string; base: number; tax: number; payment: number; [key: string]: any }, i: number) => (
                   <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{period.period}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-300">{period.base.toLocaleString('tr-TR')} ₺</td>
