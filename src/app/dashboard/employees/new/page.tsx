@@ -8,6 +8,7 @@ export default function NewEmployeePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   // Form durumları
   const [formData, setFormData] = useState({
@@ -50,8 +51,11 @@ export default function NewEmployeePage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setDebugInfo(null);
     
     try {
+      setDebugInfo('API çağrısı başlatılıyor...');
+      
       // API'ye çalışan verilerini gönder
       const response = await fetch('/api/employees', {
         method: 'POST',
@@ -61,18 +65,24 @@ export default function NewEmployeePage() {
         body: JSON.stringify(formData),
       });
       
+      setDebugInfo(`API Response Status: ${response.status}`);
+      
       const data = await response.json();
       
       if (!response.ok) {
+        setDebugInfo(`API Hatası: ${JSON.stringify(data)}`);
         throw new Error(data.error || 'Personel kaydedilirken bir hata oluştu');
       }
       
+      setDebugInfo('Başarılı! Yönlendiriliyor...');
       // Başarılı kayıt sonrası liste sayfasına yönlendir
       router.push("/dashboard/employees");
       
     } catch (error) {
       console.error("Personel eklenirken hata oluştu:", error);
-      setError(error instanceof Error ? error.message : 'Personel kaydedilirken bir hata oluştu');
+      const errorMessage = error instanceof Error ? error.message : 'Personel kaydedilirken bir hata oluştu';
+      setError(errorMessage);
+      setDebugInfo(`Catch bloğu: ${errorMessage} - Form Data: ${JSON.stringify(formData)}`);
     } finally {
       setLoading(false);
     }
@@ -89,6 +99,13 @@ export default function NewEmployeePage() {
           İptal
         </Link>
       </div>
+
+      {/* Debug bilgisi */}
+      {debugInfo && (
+        <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6" role="alert">
+          <p><strong>Debug:</strong> {debugInfo}</p>
+        </div>
+      )}
 
       {/* Hata mesajı */}
       {error && (
