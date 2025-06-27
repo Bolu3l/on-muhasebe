@@ -8,8 +8,14 @@ export default function AlacakBorcPage() {
   const [mounted, setMounted] = useState(false);
   const [tabIndex, setTabIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [reportData, setReportData] = useState({
+  const [error, setError] = useState<string | null>(null);
+  const [reportData, setReportData] = useState<{
+    receivables: Array<{ amount: number; status: string; [key: string]: any }>;
+    payables: Array<{ amount: number; status: string; [key: string]: any }>;
+    receivablesAgingBuckets: Array<any>;
+    payablesAgingBuckets: Array<any>;
+    monthlyPayments: Array<{ month: string; receivables: number; payables: number; [key: string]: any }>;
+  }>({
     receivables: [],
     payables: [],
     receivablesAgingBuckets: [],
@@ -31,7 +37,7 @@ export default function AlacakBorcPage() {
         setLoading(false);
       } catch (err) {
         console.error('Rapor verileri yüklenirken hata:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Bilinmeyen bir hata oluştu');
         setLoading(false);
       }
     };
