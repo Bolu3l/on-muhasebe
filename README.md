@@ -37,3 +37,4 @@ Next.js uygulamanızı dağıtmanın en kolay yolu, Next.js'in yaratıcılarınd
 
 Daha fazla ayrıntı için [Next.js dağıtım belgelerimiz](https://nextjs.org/docs/app/building-your-application/deploying)i inceleyin.
 # Deployment trigger
+# Deploy trigger
