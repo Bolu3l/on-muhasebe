@@ -154,6 +154,54 @@ export const employeeOperations = {
   }
 }
 
+// Düzenli işlem operasyonları
+export const recurringOperations = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('RecurringTransaction')
+      .select(`
+        *,
+        Contact(*)
+      `)
+      .order('createdAt', { ascending: false })
+    
+    if (error) throw error
+    return data
+  },
+
+  async create(recurringData: any) {
+    const { data, error } = await supabase
+      .from('RecurringTransaction')
+      .insert(recurringData)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: string, updateData: any) {
+    const { data, error } = await supabase
+      .from('RecurringTransaction')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('RecurringTransaction')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+}
+
 // Dosya yükleme işlemleri
 export const fileOperations = {
   async uploadFile(bucket: string, filePath: string, file: File) {

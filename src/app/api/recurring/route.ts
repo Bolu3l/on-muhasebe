@@ -1,47 +1,13 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { recurringOperations } from '@/lib/supabase-db';
 import { randomUUID } from 'crypto';
 
 export async function GET() {
   try {
-    // Veritabanı bağlantısını ve URL'yi logla
-    console.log('Düzenli İşlemler API - Veritabanı URL:', process.env.DATABASE_URL);
+    console.log('Düzenli İşlemler API - Supabase kullanılıyor');
     
-    // Bağlantı testi
-    const dbTest = await prisma.$queryRaw`SELECT 1 as test`;
-    console.log('Düzenli İşlemler API - Veritabanı testi başarılı:', dbTest);
-    
-    // Düzenli işlem sayısını kontrol et
-    const count = await prisma.recurringTransaction.count();
-    console.log(`Düzenli İşlemler API - RecurringTransaction tablosunda ${count} kayıt bulundu.`);
-    
-    if (count === 0) {
-      return NextResponse.json([]);
-    }
-    
-    // Düzenli işlemleri getir
-    const transactions = await prisma.recurringTransaction.findMany({
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        amount: true,
-        type: true,
-        category: true,
-        frequency: true,
-        startDate: true,
-        endDate: true,
-        isActive: true,
-        Contact: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      take: 10,
-      orderBy: { createdAt: 'desc' }
-    });
+    // Düzenli işlemleri Supabase'den getir
+    const transactions = await recurringOperations.getAll();
     
     console.log(`Düzenli İşlemler API - ${transactions.length} düzenli işlem getirildi.`);
     
@@ -117,13 +83,13 @@ export async function POST(request: Request) {
     
     // Veri hazırlama
     const recurringTransaction = {
-      id: randomUUID(), // Unique ID oluşturulması gerekiyor
+      id: randomUUID(), // Unique ID oluştur
       title: data.title.trim(),
       amount: amount,
       type: data.type,
       frequency: data.frequency,
-      startDate: startDate,
-      endDate: endDate,
+      startDate: startDate.toISOString(),
+      endDate: endDate ? endDate.toISOString() : null,
       isActive: data.isActive === undefined ? true : Boolean(data.isActive),
       category: data.category || 'diğer',
       description: data.description || null,
@@ -131,15 +97,14 @@ export async function POST(request: Request) {
       paymentMethod: data.paymentMethod || null,
       dayOfMonth: data.dayOfMonth ? Number(data.dayOfMonth) : null,
       dayOfWeek: data.dayOfWeek ? Number(data.dayOfWeek) : null,
-      updatedAt: new Date(), // Şemada required olduğu için eklenmeli
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     
-    // Veritabanına kaydet
-    const result = await prisma.recurringTransaction.create({
-      data: recurringTransaction
-    });
+    // Supabase'e kaydet
+    const result = await recurringOperations.create(recurringTransaction);
     
-    console.log('Düzenli İşlem başarıyla eklendi:', result.id);
+    console.log('Düzenli İşlem başarıyla Supabase\'e eklendi:', result.id);
     
     return NextResponse.json({ 
       message: 'Düzenli işlem başarıyla eklendi.', 
@@ -147,26 +112,16 @@ export async function POST(request: Request) {
     }, { status: 201 });
     
   } catch (error) {
-    console.error('Düzenli işlem ekleme hatası:', error);
+    console.error('Düzenli işlem Supabase ekleme hatası:', error);
     
     // Hata ayrıntısı varsa göster
     const errorMessage = error instanceof Error 
       ? error.message 
       : 'Düzenli işlem eklenirken bir hata oluştu.';
       
-    // Hata mesajını ayrıştır ve daha açıklayıcı mesajlar oluştur
-    if (errorMessage.includes('invalid input syntax')) {
-      return NextResponse.json({ 
-        message: 'Veri tipi hatası: Lütfen girdiğiniz değerleri kontrol edin.' 
-      }, { status: 400 });
-    }
-    
-    if (errorMessage.includes('not match the expected pattern')) {
-      return NextResponse.json({ 
-        message: 'Bir veya daha fazla alan beklenen formatta değil. Lütfen tüm alanları kontrol edin.' 
-      }, { status: 400 });
-    }
-    
-    return NextResponse.json({ message: errorMessage }, { status: 500 });
+    return NextResponse.json({ 
+      message: errorMessage,
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 } 
