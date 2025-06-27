@@ -1,67 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { EmployeeStatus } from "@prisma/client";
 
-// Prisma import yok - sadece test için
-
-// Mock data 
-const mockEmployees = [
-  {
-    id: 'emp-1',
-    name: 'Ahmet Yılmaz',
-    position: 'Muhasebeci',
-    department: 'Muhasebe',
-    startDate: '2023-01-15',
-    salary: 15000,
-    email: 'ahmet@example.com',
-    phone: '555-0101',
-    address: 'İstanbul',
-    taxId: '12345678901',
-    socialSecurityNumber: '123456789',
-    bankAccount: 'TR123456789',
-    status: 'ACTIVE',
-    createdAt: '2023-01-15T10:00:00Z',
-    updatedAt: '2023-01-15T10:00:00Z'
-  },
-  {
-    id: 'emp-2',
-    name: 'Ayşe Demir',
-    position: 'Satış Temsilcisi',
-    department: 'Satış',
-    startDate: '2023-03-20',
-    salary: 12000,
-    email: 'ayse@example.com',
-    phone: '555-0102',
-    address: 'Ankara',
-    taxId: '12345678902',
-    socialSecurityNumber: '123456790',
-    bankAccount: 'TR123456790',
-    status: 'ACTIVE',
-    createdAt: '2023-03-20T10:00:00Z',
-    updatedAt: '2023-03-20T10:00:00Z'
-  }
-];
-
-// GET endpoint - Mock employees listesi döndür
+// GET - Tüm çalışanları database'den getir
 export async function GET() {
   try {
-    console.log('Employee GET API çağrıldı');
+    console.log('Employee GET API çağrıldı - Database\'den veri çekiliyor');
     
-    // Mock data döndür
-    return NextResponse.json(mockEmployees);
+    const employees = await prisma.employee.findMany({
+      orderBy: {
+        name: 'asc'
+      }
+    });
+    
+    console.log(`${employees.length} çalışan bulundu`);
+    return NextResponse.json(employees);
     
   } catch (error) {
     console.error("Employee GET API hatası:", error);
     return NextResponse.json({
       status: "error",
-      message: "Employees GET API hatası",
+      message: "Çalışanlar getirilirken hata oluştu",
       error: String(error)
     }, { status: 500 });
   }
 }
 
-// POST - Yeni çalışan ekle (Prisma olmadan test)
+// POST - Yeni çalışan ekle (Database'e kaydet)
 export async function POST(req: NextRequest) {
   try {
-    console.log('Employee POST API çağrıldı (Prisma olmadan)');
+    console.log('Employee POST API çağrıldı - Database\'e kaydediliyor');
     
     const body = await req.json();
     console.log('Gelen form verisi:', JSON.stringify(body, null, 2));
@@ -75,7 +43,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Maaşı sayısal değere dönüştür
+    // Maaşı sayısal değere dönüştür (Float olduğu için direkt kullanabiliyoruz)
     const salaryNumber = parseFloat(body.salary);
     console.log('Maaş değeri:', salaryNumber);
     
@@ -91,37 +59,40 @@ export async function POST(req: NextRequest) {
     const startDate = new Date(body.startDate);
     console.log('Start date:', startDate);
 
-    // Mock çalışan verisi döndür - Prisma create yapmadan
-    console.log('Mock çalışan verisi oluşturuluyor...');
-    const mockEmployee = {
-      id: 'mock-' + Date.now(),
+    // Gerçek çalışan database'e kaydet
+    console.log('Prisma create işlemi başlatılıyor...');
+    const employeeData = {
       name: body.name,
       position: body.position,
       department: body.department,
-      startDate: startDate.toISOString(),
-      salary: salaryNumber,
+      startDate: startDate,
+      salary: salaryNumber, // Float olduğu için direkt kullan
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
       taxId: body.taxId || null,
       socialSecurityNumber: body.socialSecurityNumber || null,
       bankAccount: body.bankAccount || null,
-      status: 'ACTIVE',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      status: EmployeeStatus.ACTIVE
     };
     
-    console.log('Mock çalışan oluşturuldu:', mockEmployee.id);
-    return NextResponse.json(mockEmployee, { status: 201 });
+    console.log('Employee data:', JSON.stringify(employeeData, null, 2));
+    
+    const employee = await prisma.employee.create({
+      data: employeeData
+    });
+
+    console.log('Çalışan başarıyla database\'e kaydedildi:', employee.id);
+    return NextResponse.json(employee, { status: 201 });
     
   } catch (error) {
-    console.error("API GENEL HATA:", error);
+    console.error("Employee database kayıt hatası:", error);
     console.error("Hata mesajı:", error instanceof Error ? error.message : 'Bilinmeyen hata');
     console.error("Hata stack:", error instanceof Error ? error.stack : 'Stack yok');
     
     return NextResponse.json(
       { 
-        error: "API çalışırken bir hata oluştu",
+        error: "Çalışan database'e kaydedilirken bir hata oluştu",
         details: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       },
