@@ -10,10 +10,10 @@ export default function KdvBeyannamePage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [taxData, setTaxData] = useState(null);
-  const [taxBase, setTaxBase] = useState([]);
-  const [deductions, setDeductions] = useState([]);
+  const [error, setError] = useState<string | null>(null);
+  const [taxData, setTaxData] = useState<any>(null);
+  const [taxBase, setTaxBase] = useState<Array<{ code: string; description: string; rate: number; base: number; tax: number; [key: string]: any }>>([]);
+  const [deductions, setDeductions] = useState<Array<{ code: string; description: string; amount: number; [key: string]: any }>>([]);
   const [currentPeriod, setCurrentPeriod] = useState({
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
@@ -48,7 +48,7 @@ export default function KdvBeyannamePage() {
         setLoading(false);
       } catch (err) {
         console.error('Vergi verileri yüklenirken hata:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Bilinmeyen bir hata oluştu');
         setLoading(false);
       }
     };
