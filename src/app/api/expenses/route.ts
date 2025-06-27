@@ -1,44 +1,13 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { expenseOperations } from '@/lib/supabase-db';
 import crypto from 'crypto';
 
 export async function GET() {
   try {
-    // Veritabanı bağlantısını ve URL'yi logla
-    console.log('Giderler API - Veritabanı URL:', process.env.DATABASE_URL);
+    console.log('Giderler API - Supabase kullanılıyor');
     
-    // Bağlantı testi
-    const dbTest = await prisma.$queryRaw`SELECT 1 as test`;
-    console.log('Giderler API - Veritabanı testi başarılı:', dbTest);
-    
-    // Gider sayısını kontrol et
-    const count = await prisma.expense.count();
-    console.log(`Giderler API - Expense tablosunda ${count} kayıt bulundu.`);
-    
-    if (count === 0) {
-      return NextResponse.json([]);
-    }
-    
-    // Giderleri getir
-    const expenses = await prisma.expense.findMany({
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        amount: true,
-        expenseDate: true,
-        category: true,
-        status: true,
-        Contact: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      take: 10,
-      orderBy: { createdAt: 'desc' }
-    });
+    // Giderleri Supabase'den getir
+    const expenses = await expenseOperations.getAll();
     
     console.log(`Giderler API - ${expenses.length} gider getirildi.`);
     
@@ -93,9 +62,7 @@ export async function POST(request: Request) {
       updatedAt: new Date()
     };
     
-    const expense = await prisma.expense.create({
-      data: expenseData
-    });
+    const expense = await expenseOperations.create(expenseData);
     
     console.log('Yeni gider oluşturuldu:', expense.id);
     
@@ -103,14 +70,6 @@ export async function POST(request: Request) {
     
   } catch (error: any) {
     console.error('Gider ekleme hatası:', error);
-    
-    // Prisma hata kodlarını kontrol et
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { message: 'Bu kimliğe sahip bir gider zaten mevcut' },
-        { status: 400 }
-      );
-    }
     
     return NextResponse.json(
       { message: 'Gider eklenirken bir hata oluştu: ' + error.message },
