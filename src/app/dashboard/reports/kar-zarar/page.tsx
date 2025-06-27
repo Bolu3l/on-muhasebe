@@ -8,8 +8,13 @@ export default function KarZararPage() {
   const [mounted, setMounted] = useState(false);
   const [periodSelector, setPeriodSelector] = useState("monthly");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [reportData, setReportData] = useState({
+  const [error, setError] = useState<string | null>(null);
+  const [reportData, setReportData] = useState<{
+    monthly: Array<{ revenue: number; expenses: number; profit: number; month: string; [key: string]: any }>;
+    revenueByCategory: Array<any>;
+    expensesByCategory: Array<{ profitMargin: number; [key: string]: any }>;
+    productProfitability: Array<any>;
+  }>({
     monthly: [],
     revenueByCategory: [],
     expensesByCategory: [],
@@ -30,7 +35,7 @@ export default function KarZararPage() {
         setLoading(false);
       } catch (err) {
         console.error('Rapor verileri yüklenirken hata:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Bilinmeyen bir hata oluştu');
         setLoading(false);
       }
     };
