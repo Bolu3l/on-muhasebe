@@ -52,3 +52,4 @@ Daha fazla ayrıntı için [Next.js dağıtım belgelerimiz](https://nextjs.org/
 ---
 *Son güncelleme: Deployment testi*
 # Deploy trigger
+*Test değişikliği - 2024*
