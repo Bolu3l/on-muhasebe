@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { EmployeeStatus } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 
-// POST - Yeni çalışan ekle (Decimal olmadan)
+// GET - Tüm çalışanları getir
+export async function GET(req: NextRequest) {
+  try {
+    const employees = await prisma.employee.findMany({
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    return NextResponse.json(employees);
+  } catch (error) {
+    console.error("Çalışanlar getirilirken hata:", error);
+    return NextResponse.json(
+      { error: "Çalışanlar getirilirken bir hata oluştu" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Yeni çalışan ekle
 export async function POST(req: NextRequest) {
   try {
-    console.log('Employee POST API çağrıldı (backup versiyon)');
+    console.log('Employee POST API çağrıldı');
     
     const body = await req.json();
     console.log('Gelen form verisi:', JSON.stringify(body, null, 2));
@@ -31,25 +50,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Tarihi parse et
-    const startDate = new Date(body.startDate);
-    console.log('Start date:', startDate);
+    // Decimal tipini kullan
+    console.log('Decimal tipine dönüştürülüyor...');
+    const salaryDecimal = new Decimal(salaryNumber);
+    console.log('Decimal değer:', salaryDecimal);
 
-    // Yeni çalışan oluştur - Decimal yerine direkt number kullan
-    console.log('Prisma create işlemi başlatılıyor (sayı olarak)...');
+    // Yeni çalışan oluştur
+    console.log('Prisma create işlemi başlatılıyor...');
     const employeeData = {
       name: body.name,
       position: body.position,
       department: body.department,
-      startDate: startDate,
-      salary: salaryNumber, // Direkt number
+      startDate: new Date(body.startDate),
+      salary: salaryDecimal,
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
       taxId: body.taxId || null,
       socialSecurityNumber: body.socialSecurityNumber || null,
       bankAccount: body.bankAccount || null,
-      status: EmployeeStatus.ACTIVE // Enum kullan
+      status: body.status || "ACTIVE"
     };
     
     console.log('Employee data:', JSON.stringify(employeeData, null, 2));

@@ -57,17 +57,29 @@ export default function NewEmployeePage() {
       setDebugInfo('API çağrısı başlatılıyor...');
       
       // API'ye çalışan verilerini gönder
-      const response = await fetch('/api/employees', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      let response;
+      try {
+        response = await fetch('/api/employees', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+        setDebugInfo(`Fetch başarılı - API Response Status: ${response.status}`);
+      } catch (fetchError) {
+        setDebugInfo(`Fetch hatası: ${JSON.stringify(fetchError)} - ${fetchError instanceof Error ? fetchError.message : 'Bilinmeyen fetch hatası'}`);
+        throw new Error('API çağrısı başarısız oldu: ' + (fetchError instanceof Error ? fetchError.message : 'Network hatası'));
+      }
       
-      setDebugInfo(`API Response Status: ${response.status}`);
-      
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+        setDebugInfo(`JSON parse başarılı - API Response Status: ${response.status} - Data: ${JSON.stringify(data)}`);
+      } catch (jsonError) {
+        setDebugInfo(`JSON parse hatası: ${jsonError instanceof Error ? jsonError.message : 'JSON parse edilemedi'} - Response status: ${response.status}`);
+        throw new Error('API response parse edilemedi');
+      }
       
       if (!response.ok) {
         setDebugInfo(`API Hatası: ${JSON.stringify(data)} - Status: ${response.status} - StatusText: ${response.statusText}`);
