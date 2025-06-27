@@ -70,7 +70,7 @@ export default function NewEmployeePage() {
       const data = await response.json();
       
       if (!response.ok) {
-        setDebugInfo(`API Hatası: ${JSON.stringify(data)}`);
+        setDebugInfo(`API Hatası: ${JSON.stringify(data)} - Status: ${response.status} - StatusText: ${response.statusText}`);
         throw new Error(data.error || 'Personel kaydedilirken bir hata oluştu');
       }
       
@@ -82,7 +82,7 @@ export default function NewEmployeePage() {
       console.error("Personel eklenirken hata oluştu:", error);
       const errorMessage = error instanceof Error ? error.message : 'Personel kaydedilirken bir hata oluştu';
       setError(errorMessage);
-      setDebugInfo(`Catch bloğu: ${errorMessage} - Form Data: ${JSON.stringify(formData)}`);
+      setDebugInfo(`Catch bloğu: ${errorMessage} - Error obj: ${JSON.stringify(error)} - Form Data: ${JSON.stringify(formData)}`);
     } finally {
       setLoading(false);
     }
