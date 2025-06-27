@@ -9,15 +9,15 @@ export default function MuhtasarBeyannamePage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [taxItems, setTaxItems] = useState([]);
+  const [error, setError] = useState<string | null>(null);
+  const [taxItems, setTaxItems] = useState<Array<{ code: string; description: string; grossAmount: number; rate: number; taxAmount: number; [key: string]: any }>>([]);
   const [currentPeriod, setCurrentPeriod] = useState({
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
     periodText: `${new Date().getFullYear()}/${new Date().toLocaleString('tr-TR', { month: 'long' })}`,
     dueDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 26).toLocaleDateString('tr-TR')
   });
-  const [previousPeriods, setPreviousPeriods] = useState([]);
+  const [previousPeriods, setPreviousPeriods] = useState<Array<{ period: string; totalGross: number; totalTax: number; [key: string]: any }>>([]);
   
   // API'den verileri çek
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function MuhtasarBeyannamePage() {
         setLoading(false);
       } catch (err) {
         console.error('Vergi verileri yüklenirken hata:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Bilinmeyen bir hata oluştu');
         setLoading(false);
       }
     };
