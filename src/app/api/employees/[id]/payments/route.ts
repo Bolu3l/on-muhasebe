@@ -1,21 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { employeeOperations, salaryPaymentOperations } from "@/lib/supabase-db";
 
-// GET - Belirli bir çalışanın maaş ve prim ödemelerini getir
+// GET - Belirli bir çalışanın maaş ve prim ödemelerini getir (Supabase)
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
+    console.log(`Çalışan ödemeleri istendi - Supabase kullanılıyor, ID: ${id}`);
 
-    // Önce çalışanın var olup olmadığını kontrol et
-    const employee = await prisma.employee.findUnique({
-      where: { id }
-    });
-
-    if (!employee) {
-      return NextResponse.json(
-        { error: "Çalışan bulunamadı" },
-        { status: 404 }
-      );
+    // Önce çalışanın var olup olmadığını kontrol et - Supabase'de
+    try {
+      const employee = await employeeOperations.getById(id);
+      if (!employee) {
+        return NextResponse.json(
+          { error: "Çalışan bulunamadı" },
+          { status: 404 }
+        );
+      }
+    } catch (error: any) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: "Çalışan bulunamadı" },
+          { status: 404 }
+        );
+      }
+      throw error;
     }
 
     // URL'den filtreleme parametrelerini al
@@ -24,38 +32,36 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const endDate = url.searchParams.get("endDate");
     const type = url.searchParams.get("type");
 
-    // Filtre koşullarını oluştur
-    const where: any = {
-      employeeId: id
-    };
+    // Çalışanın tüm ödemelerini Supabase'den getir
+    let payments = await salaryPaymentOperations.getByEmployeeId(id);
+
+    // Client-side filtering uygulanması (Supabase'de karmaşık filter yerine)
+    if (startDate) {
+      const startDateObj = new Date(startDate);
+      payments = payments.filter((payment: any) => new Date(payment.paymentDate) >= startDateObj);
+    }
     
-    if (startDate || endDate) {
-      where.paymentDate = {};
-      
-      if (startDate) {
-        where.paymentDate.gte = new Date(startDate);
-      }
-      
-      if (endDate) {
-        where.paymentDate.lte = new Date(endDate);
-      }
+    if (endDate) {
+      const endDateObj = new Date(endDate);
+      payments = payments.filter((payment: any) => new Date(payment.paymentDate) <= endDateObj);
     }
 
     if (type) {
-      where.type = type;
+      payments = payments.filter((payment: any) => payment.type === type);
     }
 
-    // Ödemeleri getir
-    const payments = await prisma.salaryPayment.findMany({
-      where,
-      orderBy: {
-        paymentDate: 'desc'
-      }
-    });
+    // Decimal değerleri sayıya dönüştür
+    const processedPayments = payments.map((payment: any) => ({
+      ...payment,
+      amount: payment.amount ? Number(payment.amount.toString()) : 0,
+      taxAmount: payment.taxAmount ? Number(payment.taxAmount.toString()) : 0,
+      netAmount: payment.netAmount ? Number(payment.netAmount.toString()) : 0
+    }));
 
-    return NextResponse.json(payments);
-  } catch (error) {
-    console.error("Ödemeler getirilirken hata:", error);
+    console.log(`${processedPayments.length} ödeme Supabase'den getirildi`);
+    return NextResponse.json(processedPayments);
+  } catch (error: any) {
+    console.error("Ödemeler Supabase'den getirilirken hata:", error);
     return NextResponse.json(
       { error: "Ödemeler getirilirken bir hata oluştu" },
       { status: 500 }
@@ -63,22 +69,30 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// POST - Belirli bir çalışan için yeni ödeme ekle
+// POST - Belirli bir çalışan için yeni ödeme ekle (Supabase)
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
     const body = await req.json();
+    console.log(`Yeni ödeme ekleme isteği - Supabase kullanılıyor, Çalışan ID: ${id}`, body);
 
-    // Çalışanın varlığını kontrol et
-    const employee = await prisma.employee.findUnique({
-      where: { id }
-    });
-
-    if (!employee) {
-      return NextResponse.json(
-        { error: "Çalışan bulunamadı" },
-        { status: 404 }
-      );
+    // Çalışanın varlığını kontrol et - Supabase'de
+    try {
+      const employee = await employeeOperations.getById(id);
+      if (!employee) {
+        return NextResponse.json(
+          { error: "Çalışan bulunamadı" },
+          { status: 404 }
+        );
+      }
+    } catch (error: any) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: "Çalışan bulunamadı" },
+          { status: 404 }
+        );
+      }
+      throw error;
     }
 
     // Zorunlu alanları kontrol et
@@ -110,24 +124,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // Net tutarı hesapla
     const netAmount = amount - taxAmount;
 
-    // Ödeme oluştur
-    const payment = await prisma.salaryPayment.create({
-      data: {
-        employeeId: id,
-        paymentDate: new Date(body.paymentDate),
-        amount,
-        taxAmount,
-        netAmount,
-        type: body.type || "SALARY", // SALARY, BONUS, ALLOWANCE, ADVANCE, OTHER
-        notes: body.description || null, // description alanını notes'a map ediyoruz
-        paymentMethod: body.paymentMethod || null,
-        status: body.status || "PAID"
-      }
+    // Ödeme oluştur - Supabase'de
+    const payment = await salaryPaymentOperations.create({
+      employeeId: id,
+      paymentDate: new Date(body.paymentDate).toISOString(),
+      amount,
+      taxAmount,
+      netAmount,
+      type: body.type || "SALARY", // SALARY, BONUS, ALLOWANCE, ADVANCE, OTHER
+      notes: body.description || null, // description alanını notes'a map ediyoruz
+      paymentMethod: body.paymentMethod || null,
+      status: body.status || "PAID",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
 
-    return NextResponse.json(payment, { status: 201 });
-  } catch (error) {
-    console.error("Ödeme eklenirken hata:", error);
+    // Decimal değerleri sayıya dönüştür
+    const processedPayment = {
+      ...payment,
+      amount: payment.amount ? Number(payment.amount.toString()) : 0,
+      taxAmount: payment.taxAmount ? Number(payment.taxAmount.toString()) : 0,
+      netAmount: payment.netAmount ? Number(payment.netAmount.toString()) : 0
+    };
+
+    console.log(`Ödeme Supabase'de başarıyla oluşturuldu: ${payment.id}`);
+    return NextResponse.json(processedPayment, { status: 201 });
+  } catch (error: any) {
+    console.error("Ödeme Supabase'de eklenirken hata:", error);
     return NextResponse.json(
       { error: "Ödeme eklenirken bir hata oluştu" },
       { status: 500 }

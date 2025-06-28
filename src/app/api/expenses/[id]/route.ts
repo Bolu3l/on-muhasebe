@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { expenseOperations } from '@/lib/supabase-db';
 
-// Belirli ID'ye sahip gideri getir
+// Belirli ID'ye sahip gideri getir (Supabase)
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const id = params.id;
-    console.log(`Gider detayları istendi, ID: ${id}`);
+    console.log(`Gider detayları istendi - Supabase kullanılıyor, ID: ${id}`);
     
-    const expense = await prisma.expense.findUnique({
-      where: { id },
-      include: {
-        Contact: true
-      }
-    });
+    const expense = await expenseOperations.getById(id);
     
     if (!expense) {
       return NextResponse.json({ error: 'Gider bulunamadı' }, { status: 404 });
     }
+
+    // Decimal değerleri sayıya dönüştür
+    const processedExpense = {
+      ...expense,
+      amount: expense.amount ? Number(expense.amount.toString()) : 0
+    };
     
-    return NextResponse.json(expense);
-  } catch (error) {
-    console.error('Gider detayları alınırken hata oluştu:', error);
+    console.log(`Gider detayları Supabase'den başarıyla getirildi: ${id}`);
+    return NextResponse.json(processedExpense);
+  } catch (error: any) {
+    console.error('Gider detayları Supabase\'den alınırken hata oluştu:', error);
+    
+    // Supabase no rows returned error
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({ error: 'Gider bulunamadı' }, { status: 404 });
+    }
+    
     return NextResponse.json(
       { error: 'Gider detayları alınırken hata oluştu' },
       { status: 500 }
@@ -31,38 +39,40 @@ export async function GET(
   }
 }
 
-// Belirli ID'ye sahip gideri sil
+// Belirli ID'ye sahip gideri sil (Supabase)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const id = params.id;
-    console.log(`Gider silme isteği, ID: ${id}`);
+    console.log(`Gider silme isteği - Supabase kullanılıyor, ID: ${id}`);
     
     // Giderin var olup olmadığını kontrol et
-    const expense = await prisma.expense.findUnique({
-      where: { id }
-    });
-    
-    if (!expense) {
-      return NextResponse.json({ error: 'Silinecek gider bulunamadı' }, { status: 404 });
+    try {
+      const expense = await expenseOperations.getById(id);
+      if (!expense) {
+        return NextResponse.json({ error: 'Silinecek gider bulunamadı' }, { status: 404 });
+      }
+    } catch (error: any) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Silinecek gider bulunamadı' }, { status: 404 });
+      }
+      throw error;
     }
     
-    // Gideri sil
-    await prisma.expense.delete({
-      where: { id }
-    });
+    // Gideri Supabase'den sil
+    await expenseOperations.delete(id);
     
-    console.log(`Gider başarıyla silindi, ID: ${id}`);
+    console.log(`Gider Supabase'den başarıyla silindi, ID: ${id}`);
     
     return NextResponse.json({ 
       success: true, 
       message: 'Gider başarıyla silindi',
       id 
     });
-  } catch (error) {
-    console.error('Gider silinirken hata oluştu:', error);
+  } catch (error: any) {
+    console.error('Gider Supabase\'den silinirken hata oluştu:', error);
     return NextResponse.json(
       { 
         error: 'Gider silinirken hata oluştu',

@@ -1,26 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { employeeOperations } from "@/lib/supabase-db";
 
-// GET - ID'ye göre çalışan getir
+// GET - ID'ye göre çalışan getir (Supabase)
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
+    console.log(`Çalışan detayları istendi - Supabase kullanılıyor, ID: ${id}`);
 
-    const employee = await prisma.employee.findUnique({
-      where: { id },
-      include: {
-        salaryPayments: {
-          orderBy: {
-            paymentDate: 'desc'
-          }
-        },
-        leaveRequests: {
-          orderBy: {
-            startDate: 'desc'
-          }
-        }
-      }
-    });
+    const employee = await employeeOperations.getById(id);
 
     if (!employee) {
       return NextResponse.json(
@@ -29,9 +16,25 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       );
     }
 
-    return NextResponse.json(employee);
-  } catch (error) {
-    console.error("Çalışan getirilirken hata:", error);
+    // Decimal değerleri sayıya dönüştür
+    const processedEmployee = {
+      ...employee,
+      salary: employee.salary ? Number(employee.salary.toString()) : 0
+    };
+
+    console.log(`Çalışan detayları Supabase'den başarıyla getirildi: ${id}`);
+    return NextResponse.json(processedEmployee);
+  } catch (error: any) {
+    console.error("Çalışan Supabase'den getirilirken hata:", error);
+    
+    // Supabase no rows returned error
+    if (error.code === 'PGRST116') {
+      return NextResponse.json(
+        { error: "Çalışan bulunamadı" },
+        { status: 404 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "Çalışan getirilirken bir hata oluştu" },
       { status: 500 }
@@ -39,31 +42,41 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// PATCH - Çalışanı güncelle
+// PATCH - Çalışanı güncelle (Supabase)
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
     const body = await req.json();
+    console.log(`Çalışan güncelleme isteği - Supabase kullanılıyor, ID: ${id}`);
 
     // Çalışanın var olup olmadığını kontrol et
-    const existingEmployee = await prisma.employee.findUnique({
-      where: { id }
-    });
-
-    if (!existingEmployee) {
-      return NextResponse.json(
-        { error: "Çalışan bulunamadı" },
-        { status: 404 }
-      );
+    try {
+      const existingEmployee = await employeeOperations.getById(id);
+      if (!existingEmployee) {
+        return NextResponse.json(
+          { error: "Çalışan bulunamadı" },
+          { status: 404 }
+        );
+      }
+    } catch (error: any) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: "Çalışan bulunamadı" },
+          { status: 404 }
+        );
+      }
+      throw error;
     }
 
     // Verileri hazırla
-    const updateData: any = {};
+    const updateData: any = { 
+      updatedAt: new Date().toISOString() 
+    };
     
     if (body.name) updateData.name = body.name;
     if (body.position) updateData.position = body.position;
     if (body.department) updateData.department = body.department;
-    if (body.startDate) updateData.startDate = new Date(body.startDate);
+    if (body.startDate) updateData.startDate = new Date(body.startDate).toISOString();
     if (body.email !== undefined) updateData.email = body.email;
     if (body.phone !== undefined) updateData.phone = body.phone;
     if (body.address !== undefined) updateData.address = body.address;
@@ -80,15 +93,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
     }
 
-    // Çalışanı güncelle
-    const updatedEmployee = await prisma.employee.update({
-      where: { id },
-      data: updateData
-    });
+    // Çalışanı Supabase'de güncelle
+    const updatedEmployee = await employeeOperations.update(id, updateData);
 
-    return NextResponse.json(updatedEmployee);
-  } catch (error) {
-    console.error("Çalışan güncellenirken hata:", error);
+    // Decimal değerleri sayıya dönüştür
+    const processedEmployee = {
+      ...updatedEmployee,
+      salary: updatedEmployee.salary ? Number(updatedEmployee.salary.toString()) : 0
+    };
+
+    console.log(`Çalışan Supabase'de başarıyla güncellendi: ${id}`);
+    return NextResponse.json(processedEmployee);
+  } catch (error: any) {
+    console.error("Çalışan Supabase'de güncellenirken hata:", error);
     return NextResponse.json(
       { error: "Çalışan güncellenirken bir hata oluştu" },
       { status: 500 }
@@ -96,34 +113,41 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-// DELETE - Çalışanı sil
+// DELETE - Çalışanı sil (Supabase)
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
+    console.log(`Çalışan silme isteği - Supabase kullanılıyor, ID: ${id}`);
 
     // Çalışanın var olup olmadığını kontrol et
-    const existingEmployee = await prisma.employee.findUnique({
-      where: { id }
-    });
-
-    if (!existingEmployee) {
-      return NextResponse.json(
-        { error: "Çalışan bulunamadı" },
-        { status: 404 }
-      );
+    try {
+      const existingEmployee = await employeeOperations.getById(id);
+      if (!existingEmployee) {
+        return NextResponse.json(
+          { error: "Çalışan bulunamadı" },
+          { status: 404 }
+        );
+      }
+    } catch (error: any) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: "Çalışan bulunamadı" },
+          { status: 404 }
+        );
+      }
+      throw error;
     }
 
-    // Çalışanı sil (ilişkili kayıtlar cascade silinecek)
-    await prisma.employee.delete({
-      where: { id }
-    });
+    // Çalışanı Supabase'den sil (ilişkili kayıtlar cascade silinecek)
+    await employeeOperations.delete(id);
 
+    console.log(`Çalışan Supabase'den başarıyla silindi: ${id}`);
     return NextResponse.json(
       { message: "Çalışan başarıyla silindi" },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Çalışan silinirken hata:", error);
+  } catch (error: any) {
+    console.error("Çalışan Supabase'den silinirken hata:", error);
     return NextResponse.json(
       { error: "Çalışan silinirken bir hata oluştu" },
       { status: 500 }

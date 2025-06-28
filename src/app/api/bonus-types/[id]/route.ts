@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { bonusTypeOperations } from "@/lib/supabase-db";
 
-// GET - Belirli bir prim tipini getir
+// GET - Belirli bir prim tipini getir (Supabase)
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
+    console.log(`Prim tipi detayları istendi - Supabase kullanılıyor, ID: ${id}`);
     
-    const bonusType = await prisma.bonusType.findUnique({
-      where: { id },
-    });
+    const bonusType = await bonusTypeOperations.getById(id);
     
     if (!bonusType) {
       return NextResponse.json(
@@ -17,9 +16,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       );
     }
     
+    console.log(`Prim tipi detayları Supabase'den başarıyla getirildi: ${id}`);
     return NextResponse.json(bonusType);
-  } catch (error) {
-    console.error("Prim tipi getirilirken hata:", error);
+  } catch (error: any) {
+    console.error("Prim tipi Supabase'den getirilirken hata:", error);
+    
+    // Supabase no rows returned error
+    if (error.code === 'PGRST116') {
+      return NextResponse.json(
+        { error: "Prim tipi bulunamadı" },
+        { status: 404 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "Prim tipi getirilirken bir hata oluştu" },
       { status: 500 }
@@ -27,16 +36,26 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// PATCH - Prim tipini güncelle
+// PATCH - Prim tipini güncelle (Supabase)
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
     const body = await req.json();
+    console.log(`Prim tipi güncelleme isteği - Supabase kullanılıyor, ID: ${id}`);
     
     // Prim tipinin varlığını kontrol et
-    const bonusType = await prisma.bonusType.findUnique({
-      where: { id },
-    });
+    let bonusType;
+    try {
+      bonusType = await bonusTypeOperations.getById(id);
+    } catch (error: any) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: "Prim tipi bulunamadı" },
+          { status: 404 }
+        );
+      }
+      throw error;
+    }
     
     if (!bonusType) {
       return NextResponse.json(
@@ -57,20 +76,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     
     // Güncelleme verilerini hazırla
-    const updateData: any = {};
+    const updateData: any = {
+      updatedAt: new Date().toISOString()
+    };
     if (body.name) updateData.name = body.name;
     if (!bonusType.isDefault && body.code) updateData.code = body.code;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
     
-    // Prim tipini güncelle
-    const updatedBonusType = await prisma.bonusType.update({
-      where: { id },
-      data: updateData,
-    });
+    // Prim tipini Supabase'de güncelle
+    const updatedBonusType = await bonusTypeOperations.update(id, updateData);
     
+    console.log(`Prim tipi Supabase'de başarıyla güncellendi: ${id}`);
     return NextResponse.json(updatedBonusType);
-  } catch (error) {
-    console.error("Prim tipi güncellenirken hata:", error);
+  } catch (error: any) {
+    console.error("Prim tipi Supabase'de güncellenirken hata:", error);
     return NextResponse.json(
       { error: "Prim tipi güncellenirken bir hata oluştu" },
       { status: 500 }
@@ -78,15 +97,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-// DELETE - Prim tipini sil (yalnızca varsayılan olmayanlar)
+// DELETE - Prim tipini sil (yalnızca varsayılan olmayanlar) (Supabase)
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
+    console.log(`Prim tipi silme isteği - Supabase kullanılıyor, ID: ${id}`);
     
     // Prim tipinin varlığını kontrol et
-    const bonusType = await prisma.bonusType.findUnique({
-      where: { id },
-    });
+    let bonusType;
+    try {
+      bonusType = await bonusTypeOperations.getById(id);
+    } catch (error: any) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: "Prim tipi bulunamadı" },
+          { status: 404 }
+        );
+      }
+      throw error;
+    }
     
     if (!bonusType) {
       return NextResponse.json(
@@ -103,17 +132,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       );
     }
     
-    // Prim tipini sil
-    await prisma.bonusType.delete({
-      where: { id },
-    });
+    // Prim tipini Supabase'den sil
+    await bonusTypeOperations.delete(id);
     
+    console.log(`Prim tipi Supabase'den başarıyla silindi: ${id}`);
     return NextResponse.json(
       { message: "Prim tipi başarıyla silindi" },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Prim tipi silinirken hata:", error);
+  } catch (error: any) {
+    console.error("Prim tipi Supabase'den silinirken hata:", error);
     return NextResponse.json(
       { error: "Prim tipi silinirken bir hata oluştu" },
       { status: 500 }

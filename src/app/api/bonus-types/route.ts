@@ -1,24 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { bonusTypeOperations } from "@/lib/supabase-db";
+import { v4 as uuidv4 } from 'uuid';
 
-// GET - Tüm prim tiplerini listele
+// GET - Tüm prim tiplerini listele (Supabase)
 export async function GET(req: NextRequest) {
   try {
+    console.log("Prim tipleri istendi - Supabase kullanılıyor");
+    
     // URL'den aktiflik filtresi al
     const url = new URL(req.url);
     const onlyActive = url.searchParams.get("active") === "true";
     
-    // Prim tiplerini getir
-    const bonusTypes = await prisma.bonusType.findMany({
-      where: onlyActive ? { isActive: true } : {},
-      orderBy: { 
-        name: 'asc'
-      },
-    });
+    // Prim tiplerini Supabase'den getir
+    let bonusTypes = await bonusTypeOperations.getAll();
     
+    // Aktif filtresi uygulanacaksa
+    if (onlyActive) {
+      bonusTypes = bonusTypes.filter(type => type.isActive === true);
+    }
+    
+    console.log(`${bonusTypes.length} prim tipi Supabase'den getirildi`);
     return NextResponse.json(bonusTypes);
-  } catch (error) {
-    console.error("Prim tipleri getirilirken hata:", error);
+  } catch (error: any) {
+    console.error("Prim tipleri Supabase'den getirilirken hata:", error);
     return NextResponse.json(
       { error: "Prim tipleri getirilirken bir hata oluştu" },
       { status: 500 }
@@ -26,10 +30,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST - Yeni prim tipi ekle
+// POST - Yeni prim tipi ekle (Supabase)
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log("Yeni prim tipi oluşturma isteği - Supabase kullanılıyor:", body);
     
     // Gerekli alanların kontrolü
     if (!body.name || !body.code) {
@@ -39,10 +44,9 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Aynı kodla başka bir prim tipi var mı kontrol et
-    const existingType = await prisma.bonusType.findFirst({
-      where: { code: body.code },
-    });
+    // Aynı kodla başka bir prim tipi var mı kontrol et - Supabase'de
+    const allBonusTypes = await bonusTypeOperations.getAll();
+    const existingType = allBonusTypes.find(type => type.code === body.code);
     
     if (existingType) {
       return NextResponse.json(
@@ -51,19 +55,21 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Yeni prim tipi oluştur
-    const newBonusType = await prisma.bonusType.create({
-      data: {
-        name: body.name,
-        code: body.code,
-        isDefault: false, // Kullanıcı tarafından eklenenler varsayılan olamaz
-        isActive: true,
-      },
+    // Yeni prim tipi oluştur - Supabase'de
+    const newBonusType = await bonusTypeOperations.create({
+      id: uuidv4(), // UUID ekle
+      name: body.name,
+      code: body.code,
+      isDefault: false, // Kullanıcı tarafından eklenenler varsayılan olamaz
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
     
+    console.log("Prim tipi Supabase'de başarıyla oluşturuldu:", newBonusType.id);
     return NextResponse.json(newBonusType, { status: 201 });
-  } catch (error) {
-    console.error("Prim tipi eklenirken hata:", error);
+  } catch (error: any) {
+    console.error("Prim tipi Supabase'de eklenirken hata:", error);
     return NextResponse.json(
       { error: "Prim tipi eklenirken bir hata oluştu" },
       { status: 500 }
