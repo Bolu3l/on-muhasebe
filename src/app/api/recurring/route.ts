@@ -124,4 +124,40 @@ export async function POST(request: Request) {
       details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
-} 
+}
+
+// Düzenli işlem silme (DELETE metodu)
+export async function DELETE(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json({ message: 'ID parametresi gereklidir.' }, { status: 400 });
+    }
+    
+    console.log('Düzenli İşlem Silme - ID:', id);
+    
+    // Supabase'den sil
+    await recurringOperations.delete(id);
+    
+    console.log('Düzenli İşlem başarıyla Supabase\'den silindi:', id);
+    
+    return NextResponse.json({ 
+      message: 'Düzenli işlem başarıyla silindi.',
+      id: id 
+    }, { status: 200 });
+    
+  } catch (error) {
+    console.error('Düzenli işlem Supabase silme hatası:', error);
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Düzenli işlem silinirken bir hata oluştu.';
+      
+    return NextResponse.json({ 
+      message: errorMessage,
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
+  }
+}

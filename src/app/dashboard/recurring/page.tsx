@@ -136,15 +136,32 @@ export default function RecurringTransactionsPage() {
   }
 
   // Düzenli işlem silme
-  const handleDelete = (id: string) => {
-    if (window.confirm('Bu düzenli işlemi silmek istediğinizden emin misiniz?')) {
-      // API çağrısı ile silme işlemi gerçekleştirilecek
-      console.log('Düzenli işlem silindi:', id);
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Bu düzenli işlemi silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+    
+    try {
+      // API çağrısı ile silme işlemi
+      const response = await fetch(`/api/recurring?id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Silme işlemi başarısız oldu');
+      }
+      
+      console.log('Düzenli işlem başarıyla silindi:', id);
       
       // UI'dan kaldırma
       const updatedItems = recurringItems.filter(item => item.id !== id);
       setRecurringItems(updatedItems);
       setFilteredItems(filteredItems.filter(item => item.id !== id));
+      
+    } catch (error) {
+      console.error('Düzenli işlem silme hatası:', error);
+      alert('Düzenli işlem silinirken bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
     }
   };
 
