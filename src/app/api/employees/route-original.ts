@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       position: body.position,
       department: body.department,
       startDate: new Date(body.startDate),
-      salary: salaryDecimal,
+      salary: salaryNumber,
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
