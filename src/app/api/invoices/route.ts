@@ -307,14 +307,13 @@ export async function POST(request: NextRequest) {
       fileId: invoiceFile?.id,
       invoiceData: {
         invoiceNumber: invoice.invoiceNumber,
-        issuerName: invoice.issuerName,
-        recipientName: invoice.recipientName,
         amount: invoice.amount,
-        taxRate: invoice.taxRate,
-        taxAmount: invoice.taxAmount,
+        vatAmount: invoice.vatAmount,
         totalAmount: invoice.totalAmount,
         invoiceDate: invoice.invoiceDate,
-        dueDate: invoice.dueDate
+        dueDate: invoice.dueDate,
+        status: invoice.status,
+        invoiceType: invoice.invoiceType
       }
     });
     
