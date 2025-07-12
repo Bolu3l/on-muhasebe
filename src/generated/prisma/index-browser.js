@@ -538,7 +538,8 @@ exports.ExpenseStatus = exports.$Enums.ExpenseStatus = {
 exports.EmployeeStatus = exports.$Enums.EmployeeStatus = {
   ACTIVE: 'ACTIVE',
   INACTIVE: 'INACTIVE',
-  TERMINATED: 'TERMINATED'
+  TERMINATED: 'TERMINATED',
+  ON_LEAVE: 'ON_LEAVE'
 };
 
 exports.PaymentStatus = exports.$Enums.PaymentStatus = {

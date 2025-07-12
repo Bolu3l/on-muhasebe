@@ -183,7 +183,8 @@ export type ExpenseStatus = (typeof ExpenseStatus)[keyof typeof ExpenseStatus]
 export const EmployeeStatus: {
   ACTIVE: 'ACTIVE',
   INACTIVE: 'INACTIVE',
-  TERMINATED: 'TERMINATED'
+  TERMINATED: 'TERMINATED',
+  ON_LEAVE: 'ON_LEAVE'
 };
 
 export type EmployeeStatus = (typeof EmployeeStatus)[keyof typeof EmployeeStatus]

@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -602,6 +603,7 @@ enum EmployeeStatus {
   ACTIVE
   INACTIVE
   TERMINATED
+  ON_LEAVE
 }
 
 enum PaymentStatus {
