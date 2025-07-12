@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 export async function POST(req: NextRequest) {
+  let pool: Pool | null = null;
+  
   try {
     const { email, password } = await req.json();
 
@@ -14,20 +16,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Kullanıcıyı bul
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: {
-        companies: true
+    // PostgreSQL bağlantısı
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false
       }
     });
 
-    if (!user) {
+    // Kullanıcıyı bul
+    const userResult = await pool.query(
+      'SELECT id, email, name, role, "isActive", "passwordHash" FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Kullanıcı bulunamadı' },
         { status: 404 }
       );
     }
+
+    const user = userResult.rows[0];
 
     // Şifre kontrolü
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
@@ -37,6 +47,12 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Kullanıcının şirketlerini al
+    const companiesResult = await pool.query(
+      'SELECT id, name, "taxNumber", "taxOffice", address, phone, email, sector, "isActive" FROM companies WHERE "userId" = $1',
+      [user.id]
+    );
 
     // JWT token oluştur
     const token = jwt.sign(
@@ -53,7 +69,10 @@ export async function POST(req: NextRequest) {
     const { passwordHash: _, ...userWithoutPassword } = user;
     
     return NextResponse.json({
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        companies: companiesResult.rows
+      },
       token,
       message: 'Giriş başarılı'
     });
@@ -63,10 +82,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Giriş sırasında bir hata oluştu',
-        debug: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        debug: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
+  } finally {
+    if (pool) {
+      await pool.end();
+    }
   }
 } 
