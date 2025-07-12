@@ -61,7 +61,11 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Giriş sırasında bir hata oluştu' },
+      { 
+        error: 'Giriş sırasında bir hata oluştu',
+        debug: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
