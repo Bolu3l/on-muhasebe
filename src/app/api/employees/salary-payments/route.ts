@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
       include: {
         employee: {
           select: {
-            name: true,
+            firstName: true,
+            lastName: true,
             position: true,
             department: true
           }
@@ -54,15 +55,15 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST - Yeni maaş ödemesi ekle
+    // POST - Yeni maaş ödemesi ekle
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     
     // Zorunlu alanları kontrol et
-    if (!body.employeeId || !body.paymentDate || !body.amount) {
+    if (!body.employeeId || !body.paymentDate || !body.grossSalary || !body.companyId) {
       return NextResponse.json(
-        { error: "Çalışan ID, ödeme tarihi ve miktar zorunlu alanlardır" },
+        { error: "Çalışan ID, şirket ID, ödeme tarihi ve brüt maaş zorunlu alanlardır" },
         { status: 400 }
       );
     }
@@ -79,39 +80,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Miktar ve vergi miktarını sayısal değere dönüştür
-    const amount = parseFloat(body.amount);
-    let taxAmount = body.taxAmount ? parseFloat(body.taxAmount) : 0;
+    // Brüt maaş ve vergi miktarlarını sayısal değere dönüştür
+    const grossSalary = parseFloat(body.grossSalary);
+    const incomeTax = body.incomeTax ? parseFloat(body.incomeTax) : 0;
+    const socialSecurity = body.socialSecurity ? parseFloat(body.socialSecurity) : 0;
+    const unemploymentInsurance = body.unemploymentInsurance ? parseFloat(body.unemploymentInsurance) : 0;
+    const bonus = body.bonus ? parseFloat(body.bonus) : 0;
     
-    if (isNaN(amount)) {
+    if (isNaN(grossSalary)) {
       return NextResponse.json(
-        { error: "Miktar geçerli bir sayı olmalıdır" },
+        { error: "Brüt maaş geçerli bir sayı olmalıdır" },
         { status: 400 }
       );
     }
 
-    if (isNaN(taxAmount)) {
-      return NextResponse.json(
-        { error: "Vergi miktarı geçerli bir sayı olmalıdır" },
-        { status: 400 }
-      );
-    }
-
-    // Net tutarı hesapla
-    const netAmount = amount - taxAmount;
+    // Net maaşı hesapla
+    const netSalary = grossSalary - incomeTax - socialSecurity - unemploymentInsurance + bonus;
 
     // Maaş ödemesi oluştur
     const salaryPayment = await prisma.salaryPayment.create({
       data: {
         employeeId: body.employeeId,
+        companyId: body.companyId,
+        grossSalary,
+        incomeTax,
+        socialSecurity,
+        unemploymentInsurance,
+        netSalary,
+        bonus,
         paymentDate: new Date(body.paymentDate),
-        amount,
-        taxAmount,
-        netAmount,
-        type: body.type || "SALARY",
-        notes: body.notes || null,
-        paymentMethod: body.paymentMethod || null,
-        status: body.status || "PAID"
+        paymentPeriod: body.paymentPeriod || new Date().toISOString().slice(0, 7), // YYYY-MM format
+        status: body.status || "PAID",
+        notes: body.notes || null
       }
     });
 

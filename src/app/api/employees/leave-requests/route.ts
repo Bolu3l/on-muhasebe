@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
       include: {
         employee: {
           select: {
-            name: true,
+            firstName: true,
+            lastName: true,
             position: true,
             department: true
           }
