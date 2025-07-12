@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db';
 
 // Dosya depolama yolu (verilerinizin nerede saklandığına göre ayarlayın)
 // Bu değişken, veritabanındaki dosya yolları göreceli ise kullanılacak
