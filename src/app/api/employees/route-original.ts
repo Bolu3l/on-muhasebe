@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const employees = await prisma.employee.findMany({
       orderBy: {
-        name: 'asc'
+        firstName: 'asc'
       }
     });
 
@@ -30,10 +30,10 @@ export async function POST(req: NextRequest) {
     console.log('Gelen form verisi:', JSON.stringify(body, null, 2));
     
     // Zorunlu alanları kontrol et
-    if (!body.name || !body.position || !body.department || !body.startDate || !body.salary) {
+    if (!body.firstName || !body.lastName || !body.tcNumber || !body.userId || !body.companyId || !body.position || !body.department || !body.startDate || !body.salary) {
       console.log('Zorunlu alan eksik!');
       return NextResponse.json(
-        { error: "Ad, pozisyon, departman, başlangıç tarihi ve maaş zorunlu alanlardır" },
+        { error: "Ad, soyad, TC numarası, kullanıcı ID, şirket ID, pozisyon, departman, başlangıç tarihi ve maaş zorunlu alanlardır" },
         { status: 400 }
       );
     }
@@ -58,17 +58,20 @@ export async function POST(req: NextRequest) {
     // Yeni çalışan oluştur
     console.log('Prisma create işlemi başlatılıyor...');
     const employeeData = {
-      name: body.name,
+      userId: body.userId,
+      companyId: body.companyId,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      tcNumber: body.tcNumber,
+      sgkNumber: body.sgkNumber || null,
       position: body.position,
       department: body.department,
       startDate: new Date(body.startDate),
+      endDate: body.endDate ? new Date(body.endDate) : null,
       salary: salaryNumber,
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
-      taxId: body.taxId || null,
-      socialSecurityNumber: body.socialSecurityNumber || null,
-      bankAccount: body.bankAccount || null,
       status: body.status || "ACTIVE"
     };
     
