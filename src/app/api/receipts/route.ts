@@ -145,16 +145,26 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'ID bilgisi gerekli' }, { status: 400 });
     }
     
-    // Fiş giderinin var olduğunu kontrol et - Supabase'de
-    let existingReceipt;
-    try {
-      existingReceipt = await receiptExpenseOperations.getById(data.id);
-    } catch (error: any) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Fiş gideri bulunamadı' }, { status: 404 });
-      }
-      throw error;
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
     }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Fiş giderinin var olduğunu kontrol et - Prisma'da
+    const existingReceipt = await prisma.receiptExpense.findUnique({
+      where: { 
+        id: data.id,
+        userId: decoded.userId  // Sadece kullanıcının own kayıtlarını güncelleyebilir
+      }
+    });
     
     if (!existingReceipt) {
       return NextResponse.json({ error: 'Fiş gideri bulunamadı' }, { status: 404 });
@@ -174,22 +184,24 @@ export async function PUT(request: Request) {
       : (amount * taxRate) / 100;
     const totalAmount = amount + taxAmount;
     
-    // Fiş giderini Supabase'de güncelle
-    const updatedReceipt = await receiptExpenseOperations.update(data.id, {
-      title: data.title || existingReceipt.title,
-      description: data.description !== undefined ? data.description : existingReceipt.description,
-      amount: amount,
-      expenseDate: expenseDate ? expenseDate.toISOString() : existingReceipt.expenseDate,
-      category: data.category || existingReceipt.category,
-      receiptNumber: data.receiptNumber !== undefined ? data.receiptNumber : existingReceipt.receiptNumber,
-      taxRate: taxRate,
-      taxAmount: taxAmount,
-      totalAmount: totalAmount,
-      paymentMethod: data.paymentMethod || existingReceipt.paymentMethod,
-      contactId: data.contactId !== undefined ? data.contactId : existingReceipt.contactId,
-      receiptImageUrl: data.receiptImageUrl !== undefined ? data.receiptImageUrl : existingReceipt.receiptImageUrl,
-      isVerified: data.isVerified !== undefined ? data.isVerified : existingReceipt.isVerified,
-      updatedAt: new Date().toISOString()
+    // Fiş giderini Prisma'da güncelle
+    const updatedReceipt = await prisma.receiptExpense.update({
+      where: { id: data.id },
+      data: {
+        title: data.title || existingReceipt.title,
+        description: data.description !== undefined ? data.description : existingReceipt.description,
+        amount: amount,
+        expenseDate: expenseDate || existingReceipt.expenseDate,
+        category: data.category || existingReceipt.category,
+        receiptNumber: data.receiptNumber !== undefined ? data.receiptNumber : existingReceipt.receiptNumber,
+        taxRate: taxRate,
+        taxAmount: taxAmount,
+        totalAmount: totalAmount,
+        paymentMethod: data.paymentMethod || existingReceipt.paymentMethod,
+        contactId: data.contactId !== undefined ? data.contactId : existingReceipt.contactId,
+        receiptImageUrl: data.receiptImageUrl !== undefined ? data.receiptImageUrl : existingReceipt.receiptImageUrl,
+        isVerified: data.isVerified !== undefined ? data.isVerified : existingReceipt.isVerified,
+      }
     });
     
     return NextResponse.json(updatedReceipt);
@@ -209,23 +221,35 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID parametresi gerekli' }, { status: 400 });
     }
     
-    // Fiş giderinin var olduğunu kontrol et - Supabase'de
-    let receipt;
-    try {
-      receipt = await receiptExpenseOperations.getById(id);
-    } catch (error: any) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Fiş gideri bulunamadı' }, { status: 404 });
-      }
-      throw error;
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
     }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Fiş giderinin var olduğunu kontrol et - Prisma'da
+    const receipt = await prisma.receiptExpense.findUnique({
+      where: { 
+        id: id,
+        userId: decoded.userId  // Sadece kullanıcının own kayıtlarını silebilir
+      }
+    });
     
     if (!receipt) {
       return NextResponse.json({ error: 'Fiş gideri bulunamadı' }, { status: 404 });
     }
     
-    // Fiş giderini Supabase'den sil
-    await receiptExpenseOperations.delete(id);
+    // Fiş giderini Prisma'dan sil
+    await prisma.receiptExpense.delete({
+      where: { id: id }
+    });
     
     return NextResponse.json({ success: true });
   } catch (error) {
