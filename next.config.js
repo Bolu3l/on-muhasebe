@@ -14,7 +14,15 @@ const nextConfig = {
   typescript: {
     // Geliştirme sürecinde tip hatalarını görmezden gel
     ignoreBuildErrors: process.env.NODE_ENV === 'development',
-  }
+  },
+  // Vercel için Prisma ayarları
+  serverComponentsExternalPackages: ['prisma'],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.plugins = [...config.plugins];
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig; 
