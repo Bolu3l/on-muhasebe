@@ -38,14 +38,19 @@ export async function GET(req: NextRequest) {
         passwordValid: isPasswordValid,
         companiesCount: testUser.companies.length
       },
-      jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT_SET'
+      jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT_SET',
+      databaseUrl: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 50) + '...' : 'NOT_SET',
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT_SET'
     });
 
   } catch (error) {
     console.error('Test error:', error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
+      jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT_SET',
+      databaseUrl: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 50) + '...' : 'NOT_SET',
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT_SET'
     }, { status: 500 });
   }
 } 
