@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Dispatch, SetStateAction, useState, useRef, useEffect } from "react";
+import { logout } from "@/lib/auth";
 
 interface NavbarProps {
   userName: string;
@@ -13,6 +14,7 @@ interface NavbarProps {
 
 export default function Navbar({ userName, isSidebarOpen, setIsSidebarOpen }: NavbarProps) {
   const pathname = usePathname() || '';
+  const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   
@@ -46,6 +48,18 @@ export default function Navbar({ userName, isSidebarOpen, setIsSidebarOpen }: Na
     }
     // Alt sayfalarda olunduğunda da üst menü aktif olsun (örn: /dashboard/invoices/create -> Faturalar menüsü aktif)
     return pathname.startsWith(path) && path !== '/dashboard';
+  };
+
+  // Logout fonksiyonu
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Hata olsa bile login sayfasına yönlendir
+      router.push('/login');
+    }
   };
 
   return (
@@ -153,13 +167,12 @@ export default function Navbar({ userName, isSidebarOpen, setIsSidebarOpen }: Na
                     Profil (Yakında)
                   </Link>
                   <hr className="my-1 border-gray-200 dark:border-gray-700" />
-                  <Link 
-                    href="/login" 
-                    className="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => setUserMenuOpen(false)}
+                  <button 
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     Çıkış Yap
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}

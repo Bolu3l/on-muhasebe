@@ -1,20 +1,39 @@
 import { NextResponse } from 'next/server';
-import { expenseOperations } from '@/lib/supabase-db';
+import { prisma } from '@/lib/db';
 import crypto from 'crypto';
+import { validateToken } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('Giderler API - Supabase kullanılıyor');
+    console.log('Giderler API - Prisma kullanılıyor');
     
-    // Giderleri Supabase'den getir
-    const expenses = await expenseOperations.getAll();
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Kullanıcının giderlerini getir
+    const expenses = await prisma.expense.findMany({
+      where: { userId: decoded.userId },
+      orderBy: { expenseDate: 'desc' }
+    });
     
     console.log(`Giderler API - ${expenses.length} gider getirildi.`);
     
     // Decimal veri tiplerini dönüştürerek döndür
-    const processedExpenses = expenses.map(expense => ({
+    const processedExpenses = expenses.map((expense: any) => ({
       ...expense,
-      amount: expense.amount ? Number(expense.amount.toString()) : 0
+      amount: expense.amount ? Number(expense.amount.toString()) : 0,
+      vatAmount: expense.vatAmount ? Number(expense.vatAmount.toString()) : 0,
+      totalAmount: expense.totalAmount ? Number(expense.totalAmount.toString()) : 0
     }));
     
     return NextResponse.json(processedExpenses);
@@ -27,6 +46,31 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Kullanıcının ilk şirketini al
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { companies: true }
+    });
+    
+    if (!user || user.companies.length === 0) {
+      return NextResponse.json({ error: 'Kullanıcı veya şirket bulunamadı' }, { status: 404 });
+    }
+    
+    const companyId = user.companies[0].id;
+    
     const data = await request.json();
     console.log('Yeni gider verisi:', data);
     
@@ -47,22 +91,43 @@ export async function POST(request: Request) {
       );
     }
     
+    // KDV tutarını hesapla
+    const vatAmount = data.vatAmount ? parseFloat(data.vatAmount) : 0;
+    const totalAmount = amount + vatAmount;
+    
+    // Status değerini enum'a uygun hale getir
+    const mapStatus = (status: string) => {
+      switch(status?.toLowerCase()) {
+        case 'pending': return 'PENDING';
+        case 'approved': return 'APPROVED';
+        case 'rejected': return 'REJECTED';
+        case 'paid': return 'PAID';
+        default: return 'PENDING';
+      }
+    };
+
     // Eksik alanları varsayılan değerlerle doldur
     const expenseData = {
-      id: crypto.randomUUID(), // Yeni bir ID oluştur
+      id: crypto.randomUUID(),
+      userId: decoded.userId,
+      companyId: companyId,
       title: data.title,
-      description: data.description || '',
+      description: data.description || null,
       amount: amount,
+      vatAmount: vatAmount,
+      totalAmount: totalAmount,
       expenseDate: new Date(data.expenseDate),
       category: data.category || 'diğer',
       paymentMethod: data.paymentMethod || 'nakit',
-      status: data.status || 'pending',
-      receiptUrl: data.receiptUrl || null,
-      supplierId: data.supplierId || null,
-      updatedAt: new Date()
+      status: mapStatus(data.status),
+      contactId: data.contactId || null,
+      receiptNumber: data.receiptNumber || null,
+      isDeductible: data.isDeductible !== undefined ? data.isDeductible : true,
     };
     
-    const expense = await expenseOperations.create(expenseData);
+    const expense = await prisma.expense.create({
+      data: expenseData as any
+    });
     
     console.log('Yeni gider oluşturuldu:', expense.id);
     

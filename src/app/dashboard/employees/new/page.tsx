@@ -56,6 +56,12 @@ export default function NewEmployeePage() {
     try {
       setDebugInfo('API çağrısı başlatılıyor...');
       
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+      }
+      
       // API'ye çalışan verilerini gönder
       let response;
       try {
@@ -63,6 +69,7 @@ export default function NewEmployeePage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify(formData),
         });

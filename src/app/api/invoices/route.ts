@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { invoiceOperations } from '@/lib/supabase-db';
+import { prisma } from '@/lib/db';
+import { validateToken } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('Faturalar API - Supabase kullanılıyor');
+    console.log('Faturalar API - Prisma kullanılıyor');
     
-    // Faturaları Supabase'den getir
-    const invoices = await invoiceOperations.getAll();
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Kullanıcının faturalarını getir
+    const invoices = await prisma.invoice.findMany({
+      where: { userId: decoded.userId },
+      orderBy: { createdAt: 'desc' }
+    });
     
     console.log(`Faturalar API - ${invoices.length} fatura getirildi.`);
     
@@ -15,8 +32,7 @@ export async function GET() {
     const processedInvoices = invoices.map(invoice => ({
       ...invoice,
       amount: invoice.amount ? Number(invoice.amount.toString()) : 0,
-      taxRate: invoice.taxRate ? Number(invoice.taxRate.toString()) : 0,
-      taxAmount: invoice.taxAmount ? Number(invoice.taxAmount.toString()) : 0,
+      vatAmount: invoice.vatAmount ? Number(invoice.vatAmount.toString()) : 0,
       totalAmount: invoice.totalAmount ? Number(invoice.totalAmount.toString()) : 0
     }));
     
@@ -40,6 +56,31 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Kullanıcının ilk şirketini al
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { companies: true }
+    });
+    
+    if (!user || user.companies.length === 0) {
+      return NextResponse.json({ error: 'Kullanıcı veya şirket bulunamadı' }, { status: 404 });
+    }
+    
+    const companyId = user.companies[0].id;
+    
     const data = await request.json();
     console.log('Fatura oluşturma için alınan veriler:', JSON.stringify(data, null, 2));
     
@@ -172,32 +213,50 @@ export async function POST(request: NextRequest) {
     
     console.log('API - Satıcı ve alıcı bilgileri:', { issuerName, recipientName });
     
+    // Status değerini enum'a uygun hale getir
+    const mapStatus = (status: string) => {
+      switch(status?.toLowerCase()) {
+        case 'draft': return 'DRAFT';
+        case 'sent': return 'SENT';
+        case 'accepted': return 'ACCEPTED';
+        case 'rejected': return 'REJECTED';
+        case 'cancelled': return 'CANCELLED';
+        default: return 'DRAFT';
+      }
+    };
+    
+    // Type değerini enum'a uygun hale getir
+    const mapType = (type: string) => {
+      switch(type?.toLowerCase()) {
+        case 'incoming': return 'INCOMING';
+        case 'outgoing': return 'OUTGOING';
+        default: return 'OUTGOING';
+      }
+    };
+
     // İlk olarak faturayı oluşturalım
-    const invoice = await invoiceOperations.create({
-      id: invoiceId,
-      invoiceNumber: data.invoiceNumber,
-      invoiceDate: invoiceDate,
-      dueDate: dueDate,
-      amount: amount,
-      taxRate: taxRate,
-      taxAmount: taxAmount,
-      totalAmount: totalAmount,
-      status: data.status || 'draft',
-      notes: data.notes || 'OCR ile taranmış fatura',
-      type: data.type || 'outgoing',
-      issuerName: issuerName,
-      recipientName: recipientName,
-      issuerAddress: data.issuerAddress || '',
-      recipientAddress: data.recipientAddress || '',
-      issuerTaxId: data.issuerTaxId || '',
-      recipientTaxId: data.recipientTaxId || '',
-      customerId: data.customerId
+    const invoice = await prisma.invoice.create({
+      data: {
+        id: invoiceId,
+        userId: decoded.userId,
+        companyId: companyId,
+        invoiceNumber: data.invoiceNumber,
+        invoiceType: mapType(data.type),
+        invoiceDate: invoiceDate || new Date(),
+        dueDate: dueDate,
+        amount: amount,
+        vatAmount: taxAmount,
+        totalAmount: totalAmount,
+        status: mapStatus(data.status),
+        notes: data.notes || 'OCR ile taranmış fatura',
+        customerId: data.customerId || null,
+      }
     });
     
     console.log('Fatura oluşturuldu:', invoice.id, 'Veri:', {
       invoiceNumber: invoice.invoiceNumber,
-      issuerName: invoice.issuerName,
-      recipientName: invoice.recipientName,
+      // issuerName: invoice.issuerName,
+      // recipientName: invoice.recipientName,
       totalAmount: invoice.totalAmount,
       invoiceDate: invoice.invoiceDate,
       dueDate: invoice.dueDate
@@ -214,7 +273,7 @@ export async function POST(request: NextRequest) {
         
         // Dosya kaydını oluştur
         const { data: fileData, error: fileError } = await supabase
-          .from('InvoiceFile')
+          .from('invoice_files')
           .insert({
             id: uuidv4(),
             filename: data.tempFileName.substring(data.tempFileName.indexOf('-') + 1),

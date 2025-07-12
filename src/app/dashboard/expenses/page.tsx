@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getExpenses } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { FaEye, FaEdit, FaTrash } from 'react-icons/fa';
+import { getAuthHeaders } from "@/lib/auth";
 
 // Basit bir tip tanımlaması
 type Expense = {
@@ -33,7 +34,12 @@ export default function ExpensesPage() {
         
         // Önce doğrudan API endpoint'ini dene
         try {
-          const response = await fetch('/api/expenses');
+          const authHeaders = getAuthHeaders();
+          const response = await fetch('/api/expenses', {
+            headers: {
+              ...(authHeaders.Authorization ? { Authorization: authHeaders.Authorization } : {}),
+            },
+          });
           if (response.ok) {
             const data = await response.json();
             if (data && data.length > 0) {
@@ -190,8 +196,12 @@ export default function ExpensesPage() {
     if (window.confirm('Bu gideri silmek istediğinizden emin misiniz?')) {
       try {
         // API çağrısı ile silme işlemi gerçekleştir
+        const authHeaders = getAuthHeaders();
         const response = await fetch(`/api/expenses/${id}`, {
           method: 'DELETE',
+          headers: {
+            ...(authHeaders.Authorization ? { Authorization: authHeaders.Authorization } : {}),
+          },
         });
         
         if (!response.ok) {

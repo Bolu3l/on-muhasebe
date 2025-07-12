@@ -1,16 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { employeeOperations } from "@/lib/supabase-db";
+import { prisma } from "@/lib/db";
+import { validateToken } from "@/lib/auth";
 import crypto from 'crypto';
 
-// GET - Tüm çalışanları Supabase'den getir
-export async function GET() {
+// GET - Tüm çalışanları Prisma'dan getir
+export async function GET(request: Request) {
   try {
-    console.log('Employee GET API çağrıldı - Supabase kullanılıyor');
+    console.log('Employee GET API çağrıldı - Prisma kullanılıyor');
     
-    const employees = await employeeOperations.getAll();
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
     
-    console.log(`${employees.length} çalışan bulundu`);
-    return NextResponse.json(employees);
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Kullanıcının çalışanlarını getir
+    const employees = await prisma.employee.findMany({
+      where: { userId: decoded.userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    // Decimal alanları dönüştür
+    const processedEmployees = employees.map((employee: any) => ({
+      ...employee,
+      salary: employee.salary ? Number(employee.salary.toString()) : 0
+    }));
+    
+    console.log(`${processedEmployees.length} çalışan bulundu`);
+    return NextResponse.json(processedEmployees);
     
   } catch (error) {
     console.error("Employee GET API hatası:", error);
@@ -22,19 +46,44 @@ export async function GET() {
   }
 }
 
-// POST - Yeni çalışan ekle (Supabase'e kaydet)
+// POST - Yeni çalışan ekle (Prisma'ya kaydet)
 export async function POST(req: NextRequest) {
   try {
-    console.log('Employee POST API çağrıldı - Supabase kullanılıyor');
+    console.log('Employee POST API çağrıldı - Prisma kullanılıyor');
+    
+    // Auth token'ını kontrol et
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Kullanıcının ilk şirketini al
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { companies: true }
+    });
+    
+    if (!user || user.companies.length === 0) {
+      return NextResponse.json({ error: 'Kullanıcı veya şirket bulunamadı' }, { status: 404 });
+    }
+    
+    const companyId = user.companies[0].id;
     
     const body = await req.json();
     console.log('Gelen form verisi:', JSON.stringify(body, null, 2));
     
     // Zorunlu alanları kontrol et
-    if (!body.name || !body.position || !body.department || !body.startDate || !body.salary) {
+    if (!body.firstName || !body.lastName || !body.position || !body.department || !body.startDate || !body.salary || !body.tcNumber) {
       console.log('Zorunlu alan eksik!');
       return NextResponse.json(
-        { error: "Ad, pozisyon, departman, başlangıç tarihi ve maaş zorunlu alanlardır" },
+        { error: "Ad, soyad, TC kimlik no, pozisyon, departman, başlangıç tarihi ve maaş zorunlu alanlardır" },
         { status: 400 }
       );
     }
@@ -58,37 +107,40 @@ export async function POST(req: NextRequest) {
     // Çalışan verilerini hazırla
     const employeeData = {
       id: crypto.randomUUID(), // Yeni ID oluştur
-      name: body.name,
+      userId: decoded.userId,
+      companyId: companyId,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      tcNumber: body.tcNumber,
+      sgkNumber: body.sgkNumber || null,
       position: body.position,
       department: body.department,
-      startDate: startDate.toISOString(),
+      startDate: startDate,
+      endDate: body.endDate ? new Date(body.endDate) : null,
       salary: salaryNumber,
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
-      taxId: body.taxId || null,
-      socialSecurityNumber: body.socialSecurityNumber || null,
-      bankAccount: body.bankAccount || null,
       status: 'ACTIVE',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
     };
     
     console.log('Employee data:', JSON.stringify(employeeData, null, 2));
     
-    // Supabase ile çalışan oluştur
-    const employee = await employeeOperations.create(employeeData);
+    // Prisma ile çalışan oluştur
+    const employee = await prisma.employee.create({
+      data: employeeData as any
+    });
 
-    console.log('Çalışan başarıyla Supabase\'e kaydedildi:', employee.id);
+    console.log('Çalışan başarıyla Prisma\'ya kaydedildi:', employee.id);
     return NextResponse.json(employee, { status: 201 });
     
   } catch (error) {
-    console.error("Employee Supabase kayıt hatası:", error);
+    console.error("Employee Prisma kayıt hatası:", error);
     console.error("Error message:", error instanceof Error ? error.message : 'Bilinmeyen hata');
     
     return NextResponse.json(
       { 
-        error: "Çalışan Supabase'e kaydedilirken bir hata oluştu",
+        error: "Çalışan Prisma'ya kaydedilirken bir hata oluştu",
         details: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       },

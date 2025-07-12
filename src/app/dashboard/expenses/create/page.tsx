@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
+import { getAuthHeaders } from "@/lib/auth";
 
 export default function CreateExpensePage() {
   const router = useRouter();
@@ -43,10 +44,12 @@ export default function CreateExpensePage() {
         throw new Error('Lütfen zorunlu alanları doldurun');
       }
       
+      const authHeaders = getAuthHeaders();
       const response = await fetch('/api/expenses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(authHeaders.Authorization ? { Authorization: authHeaders.Authorization } : {}),
         },
         body: JSON.stringify(formData),
       });

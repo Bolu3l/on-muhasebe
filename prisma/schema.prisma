@@ -1,110 +1,317 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Supabase için gerekli
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  name                  String?
+  passwordHash          String
+  role                  UserRole               @default(USER)
+  isEmailVerified       Boolean                @default(false)
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  activityLogs          ActivityLog[]
+  companies             Company[]
+  contacts              Contact[]
+  customers             Customer[]
+  employees             Employee[]
+  expenses              Expense[]
+  fileStorages          FileStorage[]
+  invoices              Invoice[]
+  receiptExpenses       ReceiptExpense[]
+  recurringTransactions RecurringTransaction[]
+  taxDeclarations       TaxDeclaration[]
+
+  @@map("users")
+}
+
+model Company {
+  id                    String                 @id @default(cuid())
+  userId                String
+  name                  String
+  taxNumber             String
+  taxOffice             String
+  mersisNo              String?
+  address               String
+  phone                 String?
+  email                 String?
+  sector                String?
+  activityCode          String?
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  activityLogs          ActivityLog[]
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contacts              Contact[]
+  customers             Customer[]
+  employees             Employee[]
+  expenses              Expense[]
+  fileStorages          FileStorage[]
+  invoices              Invoice[]
+  receiptExpenses       ReceiptExpense[]
+  recurringTransactions RecurringTransaction[]
+  salaryPayments        SalaryPayment[]
+  taxDeclarations       TaxDeclaration[]
+
+  @@index([userId])
+  @@index([taxNumber])
+  @@map("companies")
 }
 
 model Invoice {
-  id                                  String        @id @default(cuid())
-  invoiceNumber                       String
-  invoiceDate                         DateTime?
-  dueDate                             DateTime?
-  amount                              Decimal?      @default(0)
-  taxRate                             Decimal?      @default(0)
-  taxAmount                           Decimal?      @default(0)
-  totalAmount                         Decimal       @default(0)
-  isPaid                              Boolean       @default(false)
-  paymentDate                         DateTime?
-  status                              String        @default("pending")
-  type                                String?       @default("incoming")
-  notes                               String?
-  customerId                          String?
-  supplierId                          String?
-  createdAt                           DateTime      @default(now())
-  updatedAt                           DateTime      @updatedAt
-  issuerAddress                       String?
-  issuerName                          String?
-  issuerTaxId                         String?
-  recipientAddress                    String?
-  recipientName                       String?
-  recipientTaxId                      String?
-  customer                            Contact?      @relation(fields: [customerId], references: [id])
-  Contact_Invoice_supplierIdToContact Contact?      @relation("Invoice_supplierIdToContact", fields: [supplierId], references: [id])
-  InvoiceFile                         InvoiceFile[]
-  items                               InvoiceItem[]
+  id            String        @id @default(cuid())
+  userId        String
+  companyId     String
+  invoiceNumber String
+  invoiceType   InvoiceType
+  invoiceDate   DateTime
+  dueDate       DateTime?
+  amount        Decimal       @default(0) @db.Decimal(15, 2)
+  vatAmount     Decimal       @default(0) @db.Decimal(15, 2)
+  totalAmount   Decimal       @default(0) @db.Decimal(15, 2)
+  currency      String        @default("TRY")
+  exchangeRate  Decimal       @default(1) @db.Decimal(10, 4)
+  isPaid        Boolean       @default(false)
+  paymentDate   DateTime?
+  status        InvoiceStatus @default(DRAFT)
+  contactId     String?
+  customerId    String?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  activityLogs  ActivityLog[]
+  eInvoice      EInvoice?
+  fileStorages  FileStorage[]
+  invoiceFiles  InvoiceFile[]
+  items         InvoiceItem[]
+  company       Company       @relation(fields: [companyId], references: [id])
+  contact       Contact?      @relation(fields: [contactId], references: [id])
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([customerId])
+  @@index([invoiceNumber])
+  @@map("invoices")
 }
 
 model InvoiceItem {
-  id          String   @id @default(cuid())
-  description String
-  quantity    Decimal  @default(1)
-  unitPrice   Decimal
-  vatRate     Decimal  @default(0)
-  vatAmount   Decimal  @default(0)
-  totalAmount Decimal
-  invoiceId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  invoiceId      String
+  productCode    String?
+  description    String
+  quantity       Decimal  @default(1) @db.Decimal(10, 3)
+  unitOfMeasure  String   @default("C62")
+  unitPrice      Decimal  @db.Decimal(15, 2)
+  vatRate        Decimal  @default(0) @db.Decimal(5, 4)
+  vatAmount      Decimal  @default(0) @db.Decimal(15, 2)
+  discountRate   Decimal  @default(0) @db.Decimal(5, 4)
+  discountAmount Decimal  @default(0) @db.Decimal(15, 2)
+  totalAmount    Decimal  @db.Decimal(15, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
 }
 
-model Contact {
-  id                                  String                 @id
-  name                                String
-  taxNumber                           String?
-  taxOffice                           String?
-  address                             String?
-  phone                               String?
-  email                               String?
-  isCustomer                          Boolean                @default(true)
-  isSupplier                          Boolean                @default(false)
-  createdAt                           DateTime               @default(now())
-  updatedAt                           DateTime
-  Expense                             Expense[]
-  invoices                            Invoice[]
-  Invoice_Invoice_supplierIdToContact Invoice[]              @relation("Invoice_supplierIdToContact")
-  RecurringTransaction                RecurringTransaction[]
-  ReceiptExpense                      ReceiptExpense[]
-}
+model EInvoice {
+  id           String         @id @default(cuid())
+  invoiceId    String         @unique
+  eInvoiceUuid String?
+  eInvoiceType String?
+  profileId    String?
+  scenario     String?
+  status       EInvoiceStatus @default(PENDING)
+  qnbBelgeOid  String?
+  qnbResponse  String?
+  gibResponse  String?
+  xmlContent   String?
+  errorMessage String?
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  invoice      Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-model Expense {
-  id            String   @id
-  title         String
-  description   String?
-  amount        Decimal
-  expenseDate   DateTime
-  category      String
-  paymentMethod String
-  status        String   @default("completed")
-  receiptUrl    String?
-  supplierId    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime
-  Contact       Contact? @relation(fields: [supplierId], references: [id])
+  @@index([eInvoiceUuid])
+  @@index([qnbBelgeOid])
+  @@map("e_invoices")
 }
 
 model InvoiceFile {
-  id         String   @id
+  id         String   @id @default(cuid())
+  invoiceId  String
   filename   String
   fileKey    String
   fileSize   Int
   mimeType   String
   uploadDate DateTime @default(now())
-  invoiceId  String
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
-  Invoice    Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  updatedAt  DateTime @updatedAt
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_files")
+}
+
+model Contact {
+  id                    String                 @id @default(cuid())
+  userId                String
+  companyId             String
+  name                  String
+  taxNumber             String?
+  taxOffice             String?
+  address               String?
+  phone                 String?
+  email                 String?
+  contactType           ContactType
+  isActive              Boolean                @default(true)
+  creditLimit           Decimal?               @db.Decimal(15, 2)
+  paymentTerms          String?
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  activityLogs          ActivityLog[]
+  company               Company                @relation(fields: [companyId], references: [id])
+  user                  User                   @relation(fields: [userId], references: [id])
+  expenses              Expense[]
+  fileStorages          FileStorage[]
+  invoices              Invoice[]
+  receiptExpenses       ReceiptExpense[]
+  recurringTransactions RecurringTransaction[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([taxNumber])
+  @@map("contacts")
+}
+
+model Customer {
+  id            String        @id @default(cuid())
+  userId        String
+  companyId     String
+  customerCode  String
+  name          String
+  companyName   String?
+  taxNumber     String?
+  taxOffice     String?
+  mersisNo      String?
+  address       String?
+  district      String?
+  city          String?
+  postalCode    String?
+  country       String        @default("Türkiye")
+  phone         String?
+  mobile        String?
+  email         String?
+  website       String?
+  sector        String?
+  customerType  CustomerType  @default(INDIVIDUAL)
+  priceList     String?
+  paymentTerms  String?
+  paymentMethod String?
+  creditLimit   Decimal?      @db.Decimal(15, 2)
+  discountRate  Decimal       @default(0) @db.Decimal(5, 4)
+  currency      String        @default("TRY")
+  contactPerson String?
+  contactTitle  String?
+  notes         String?
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  activityLogs  ActivityLog[]
+  company       Company       @relation(fields: [companyId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  fileStorages  FileStorage[]
+  invoices      Invoice[]
+
+  @@unique([companyId, customerCode])
+  @@index([userId])
+  @@index([companyId])
+  @@index([customerCode])
+  @@index([taxNumber])
+  @@map("customers")
+}
+
+model Expense {
+  id            String        @id @default(cuid())
+  userId        String
+  companyId     String
+  title         String
+  description   String?
+  amount        Decimal       @db.Decimal(15, 2)
+  vatAmount     Decimal       @default(0) @db.Decimal(15, 2)
+  totalAmount   Decimal       @db.Decimal(15, 2)
+  expenseDate   DateTime
+  category      String
+  paymentMethod String
+  status        ExpenseStatus @default(PENDING)
+  contactId     String?
+  receiptNumber String?
+  isDeductible  Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  activityLogs  ActivityLog[]
+  company       Company       @relation(fields: [companyId], references: [id])
+  contact       Contact?      @relation(fields: [contactId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  fileStorages  FileStorage[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([contactId])
+  @@map("expenses")
+}
+
+model ReceiptExpense {
+  id              String   @id @default(cuid())
+  userId          String
+  companyId       String
+  title           String
+  description     String?
+  amount          Decimal  @db.Decimal(15, 2)
+  expenseDate     DateTime
+  category        String
+  receiptNumber   String?
+  taxRate         Decimal  @default(0) @db.Decimal(5, 4)
+  taxAmount       Decimal  @default(0) @db.Decimal(15, 2)
+  totalAmount     Decimal  @db.Decimal(15, 2)
+  paymentMethod   String   @default("cash")
+  contactId       String?
+  receiptImageUrl String?
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  company         Company  @relation(fields: [companyId], references: [id])
+  contact         Contact? @relation(fields: [contactId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([contactId])
+  @@map("receipt_expenses")
 }
 
 model RecurringTransaction {
-  id            String    @id
+  id            String    @id @default(cuid())
+  userId        String
+  companyId     String
   title         String
   description   String?
-  amount        Decimal
+  amount        Decimal   @db.Decimal(15, 2)
   type          String
   category      String
   paymentMethod String?
@@ -117,120 +324,284 @@ model RecurringTransaction {
   lastProcessed DateTime?
   contactId     String?
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime
-  Contact       Contact?  @relation(fields: [contactId], references: [id])
-}
+  updatedAt     DateTime  @updatedAt
+  company       Company   @relation(fields: [companyId], references: [id])
+  contact       Contact?  @relation(fields: [contactId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
 
-model User {
-  id           String   @id
-  email        String   @unique
-  name         String?
-  passwordHash String
-  role         String   @default("user")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime
+  @@index([userId])
+  @@index([companyId])
+  @@index([contactId])
+  @@map("recurring_transactions")
 }
-
-// Personel Yönetimi İçin Veri Modelleri
 
 model Employee {
-  id                   String            @id @default(cuid())
-  name                 String
-  position             String
-  department           String
-  startDate            DateTime
-  email                String?
-  phone                String?
-  address              String?
-  taxId                String?           // TC Kimlik No
-  socialSecurityNumber String?           // SGK No
-  bankAccount          String?
-  salary               Float
-  status               EmployeeStatus    @default(ACTIVE)
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-  salaryPayments       SalaryPayment[]
-  leaveRequests        LeaveRequest[]
-  documents            EmployeeDocument[]
-  leaveBalance         EmployeeLeaveBalance?
+  id             String                @id @default(cuid())
+  userId         String
+  companyId      String
+  firstName      String
+  lastName       String
+  tcNumber       String
+  sgkNumber      String?
+  position       String
+  department     String
+  startDate      DateTime
+  endDate        DateTime?
+  email          String?
+  phone          String?
+  address        String?
+  salary         Decimal               @db.Decimal(15, 2)
+  status         EmployeeStatus        @default(ACTIVE)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  activityLogs   ActivityLog[]
+  leaveBalance   EmployeeLeaveBalance?
+  company        Company               @relation(fields: [companyId], references: [id])
+  user           User                  @relation(fields: [userId], references: [id])
+  fileStorages   FileStorage[]
+  leaveRequests  LeaveRequest[]
+  salaryPayments SalaryPayment[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([tcNumber])
+  @@map("employees")
 }
 
 model SalaryPayment {
-  id             String           @id @default(cuid())
-  employeeId     String
-  paymentDate    DateTime
-  amount         Float
-  type           SalaryPaymentType @default(SALARY)
-  taxAmount      Float          @default(0)
-  netAmount      Float
-  notes          String?
-  paymentMethod  String?
-  status         PaymentStatus    @default(PAID)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  employee       Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  id                    String        @id @default(cuid())
+  employeeId            String
+  companyId             String
+  grossSalary           Decimal       @db.Decimal(15, 2)
+  incomeTax             Decimal       @default(0) @db.Decimal(15, 2)
+  socialSecurity        Decimal       @default(0) @db.Decimal(15, 2)
+  unemploymentInsurance Decimal       @default(0) @db.Decimal(15, 2)
+  netSalary             Decimal       @db.Decimal(15, 2)
+  bonus                 Decimal       @default(0) @db.Decimal(15, 2)
+  paymentDate           DateTime
+  paymentPeriod         String
+  status                PaymentStatus @default(PENDING)
+  notes                 String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  activityLogs          ActivityLog[]
+  company               Company       @relation(fields: [companyId], references: [id])
+  employee              Employee      @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId])
+  @@index([companyId])
+  @@index([paymentPeriod])
+  @@map("salary_payments")
 }
 
 model LeaveRequest {
-  id          String        @id @default(cuid())
-  employeeId  String
-  startDate   DateTime
-  endDate     DateTime
-  days        Int
-  type        LeaveType
-  status      LeaveStatus   @default(PENDING)
-  notes       String?
-  approvedAt  DateTime?
-  approvedBy  String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  employee    Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-}
+  id         String      @id @default(cuid())
+  employeeId String
+  startDate  DateTime
+  endDate    DateTime
+  days       Int
+  type       LeaveType
+  status     LeaveStatus @default(PENDING)
+  notes      String?
+  approvedAt DateTime?
+  approvedBy String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  employee   Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-model EmployeeDocument {
-  id          String   @id @default(cuid())
-  employeeId  String
-  title       String
-  fileKey     String
-  fileSize    Int
-  mimeType    String
-  uploadDate  DateTime @default(now())
-  category    String   @default("other")
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  @@index([employeeId])
+  @@map("leave_requests")
 }
 
 model EmployeeLeaveBalance {
-  id                String    @id @default(cuid())
-  employeeId        String    @unique
-  year              Int       // İzin yılı
-  annualLeaveTotal  Int       @default(14)  // Toplam yıllık izin hakkı (yasal olarak en az 14 gün)
-  annualLeaveUsed   Int       @default(0)   // Kullanılan yıllık izin
-  sickLeaveTotal    Int       @default(5)   // Hastalık izni hakkı
-  sickLeaveUsed     Int       @default(0)   // Kullanılan hastalık izni
-  lastUpdated       DateTime  @default(now())
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  employee          Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  employeeId       String   @unique
+  year             Int
+  annualLeaveTotal Int      @default(14)
+  annualLeaveUsed  Int      @default(0)
+  sickLeaveTotal   Int      @default(5)
+  sickLeaveUsed    Int      @default(0)
+  lastUpdated      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@map("employee_leave_balances")
+}
+
+model BonusType {
+  id        String   @id @default(cuid())
+  name      String
+  code      String
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@map("bonus_types")
+}
+
+model TaxDeclaration {
+  id              String            @id @default(cuid())
+  userId          String
+  companyId       String
+  declarationType DeclarationType
+  period          String
+  year            Int
+  month           Int?
+  calculatedTax   Decimal           @default(0) @db.Decimal(15, 2)
+  paidTax         Decimal           @default(0) @db.Decimal(15, 2)
+  status          DeclarationStatus @default(DRAFT)
+  submissionDate  DateTime?
+  dueDate         DateTime?
+  declarationData String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  activityLogs    ActivityLog[]
+  fileStorages    FileStorage[]
+  company         Company           @relation(fields: [companyId], references: [id])
+  user            User              @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([declarationType])
+  @@map("tax_declarations")
+}
+
+model FileStorage {
+  id               String          @id @default(cuid())
+  userId           String
+  companyId        String
+  filename         String
+  originalName     String
+  mimeType         String
+  fileSize         Int
+  fileCategory     FileCategory
+  storagePath      String
+  entityType       String?
+  invoiceId        String?
+  expenseId        String?
+  contactId        String?
+  customerId       String?
+  employeeId       String?
+  taxDeclarationId String?
+  isPublic         Boolean         @default(false)
+  uploadedAt       DateTime        @default(now())
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  company          Company         @relation(fields: [companyId], references: [id])
+  contact          Contact?        @relation(fields: [contactId], references: [id])
+  customer         Customer?       @relation(fields: [customerId], references: [id])
+  employee         Employee?       @relation(fields: [employeeId], references: [id])
+  expense          Expense?        @relation(fields: [expenseId], references: [id])
+  invoice          Invoice?        @relation(fields: [invoiceId], references: [id])
+  taxDeclaration   TaxDeclaration? @relation(fields: [taxDeclarationId], references: [id])
+  user             User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([invoiceId])
+  @@index([expenseId])
+  @@index([contactId])
+  @@index([customerId])
+  @@index([employeeId])
+  @@index([taxDeclarationId])
+  @@map("file_storages")
+}
+
+model ActivityLog {
+  id               String          @id @default(cuid())
+  userId           String
+  companyId        String
+  action           String
+  entityType       String
+  invoiceId        String?
+  expenseId        String?
+  contactId        String?
+  customerId       String?
+  employeeId       String?
+  salaryPaymentId  String?
+  taxDeclarationId String?
+  oldData          String?
+  newData          String?
+  ipAddress        String?
+  userAgent        String?
+  createdAt        DateTime        @default(now())
+  company          Company         @relation(fields: [companyId], references: [id])
+  contact          Contact?        @relation(fields: [contactId], references: [id])
+  customer         Customer?       @relation(fields: [customerId], references: [id])
+  employee         Employee?       @relation(fields: [employeeId], references: [id])
+  expense          Expense?        @relation(fields: [expenseId], references: [id])
+  invoice          Invoice?        @relation(fields: [invoiceId], references: [id])
+  salaryPayment    SalaryPayment?  @relation(fields: [salaryPaymentId], references: [id])
+  taxDeclaration   TaxDeclaration? @relation(fields: [taxDeclarationId], references: [id])
+  user             User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([invoiceId])
+  @@index([expenseId])
+  @@index([contactId])
+  @@index([customerId])
+  @@index([employeeId])
+  @@index([salaryPaymentId])
+  @@index([taxDeclarationId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  ACCOUNTANT
+}
+
+enum InvoiceType {
+  INCOMING
+  OUTGOING
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum EInvoiceStatus {
+  PENDING
+  SENT
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum ContactType {
+  CUSTOMER
+  SUPPLIER
+  BOTH
+}
+
+enum CustomerType {
+  INDIVIDUAL
+  CORPORATE
+  GOVERNMENT
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
 }
 
 enum EmployeeStatus {
   ACTIVE
   INACTIVE
-  ON_LEAVE
   TERMINATED
-}
-
-enum SalaryPaymentType {
-  SALARY
-  BONUS
-  ALLOWANCE
-  ADVANCE
-  CUSTOMER_SATISFACTION
-  SALES
-  OTHER
 }
 
 enum PaymentStatus {
@@ -256,33 +627,22 @@ enum LeaveStatus {
   CANCELLED
 }
 
-// Özel Prim Tipleri İçin Model
-model BonusType {
-  id        String   @id @default(cuid())
-  name      String   // Prim tipi adı (örn: "Müşteri Memnuniyeti")
-  code      String   // Sistem kodu (örn: "CUSTOMER_SATISFACTION")
-  isDefault Boolean  @default(false) // Varsayılan sistem prim tipi mi?
-  isActive  Boolean  @default(true)  // Aktif mi?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum DeclarationType {
+  VAT
+  INCOME
+  WITHHOLDING
 }
 
-model ReceiptExpense {
-  id             String    @id @default(cuid())
-  title          String
-  description    String?
-  amount         Float
-  expenseDate    DateTime
-  category       String    // Akaryakıt, Gıda, Ofis Malzemeleri vb.
-  receiptNumber  String?
-  taxRate        Float   @default(0)
-  taxAmount      Float   @default(0)
-  totalAmount    Float
-  paymentMethod  String    @default("cash")
-  supplierId     String?
-  receiptImageUrl String?
-  isVerified     Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  supplier       Contact?  @relation(fields: [supplierId], references: [id])
+enum DeclarationStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+}
+
+enum FileCategory {
+  INVOICE
+  EXPENSE
+  EMPLOYEE
+  TAX
+  OTHER
 }

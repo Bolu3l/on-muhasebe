@@ -1,13 +1,30 @@
 import { NextResponse } from 'next/server';
-import { recurringOperations } from '@/lib/supabase-db';
+import { prisma } from '@/lib/db';
+import { validateToken } from '@/lib/auth';
 import { randomUUID } from 'crypto';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('Düzenli İşlemler API - Supabase kullanılıyor');
+    console.log('Düzenli İşlemler API - Prisma kullanılıyor');
     
-    // Düzenli işlemleri Supabase'den getir
-    const transactions = await recurringOperations.getAll();
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Kullanıcının düzenli işlemlerini getir
+    const transactions = await prisma.recurringTransaction.findMany({
+      where: { userId: decoded.userId },
+      orderBy: { createdAt: 'desc' }
+    });
     
     console.log(`Düzenli İşlemler API - ${transactions.length} düzenli işlem getirildi.`);
     
@@ -28,6 +45,31 @@ export async function GET() {
 // Düzenli işlem ekleme (POST metodu)
 export async function POST(request: Request) {
   try {
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    // Kullanıcının ilk şirketini al
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { companies: true }
+    });
+    
+    if (!user || user.companies.length === 0) {
+      return NextResponse.json({ error: 'Kullanıcı veya şirket bulunamadı' }, { status: 404 });
+    }
+    
+    const companyId = user.companies[0].id;
+    
     // Gelen veriyi al
     const data = await request.json();
     console.log('Düzenli İşlem Ekleme - Gelen veri:', data);
@@ -69,13 +111,15 @@ export async function POST(request: Request) {
       }
     }
     
-    // Türü kontrol et
-    if (!['expense', 'income'].includes(data.type)) {
+    // Türü kontrol et - küçük harften büyük harfe dönüştür
+    const validTypes = ['expense', 'income'];
+    if (!validTypes.includes(data.type?.toLowerCase())) {
       return NextResponse.json({ message: 'Geçersiz tür: sadece "expense" veya "income" olabilir.' }, { status: 400 });
     }
     
     // Sıklık kontrolü
-    if (!['weekly', 'monthly', 'quarterly', 'annually'].includes(data.frequency)) {
+    const validFrequencies = ['weekly', 'monthly', 'quarterly', 'annually'];
+    if (!validFrequencies.includes(data.frequency?.toLowerCase())) {
       return NextResponse.json({ 
         message: 'Geçersiz sıklık: sadece "weekly", "monthly", "quarterly" veya "annually" olabilir.' 
       }, { status: 400 });
@@ -84,12 +128,14 @@ export async function POST(request: Request) {
     // Veri hazırlama
     const recurringTransaction = {
       id: randomUUID(), // Unique ID oluştur
+      userId: decoded.userId,
+      companyId: companyId,
       title: data.title.trim(),
       amount: amount,
-      type: data.type,
-      frequency: data.frequency,
-      startDate: startDate.toISOString(),
-      endDate: endDate ? endDate.toISOString() : null,
+      type: data.type?.toLowerCase() || 'expense',
+      frequency: data.frequency?.toLowerCase() || 'monthly',
+      startDate: startDate,
+      endDate: endDate,
       isActive: data.isActive === undefined ? true : Boolean(data.isActive),
       category: data.category || 'diğer',
       description: data.description || null,
@@ -97,14 +143,14 @@ export async function POST(request: Request) {
       paymentMethod: data.paymentMethod || null,
       dayOfMonth: data.dayOfMonth ? Number(data.dayOfMonth) : null,
       dayOfWeek: data.dayOfWeek ? Number(data.dayOfWeek) : null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
     
-    // Supabase'e kaydet
-    const result = await recurringOperations.create(recurringTransaction);
+    // Prisma'ya kaydet
+    const result = await prisma.recurringTransaction.create({
+      data: recurringTransaction as any
+    });
     
-    console.log('Düzenli İşlem başarıyla Supabase\'e eklendi:', result.id);
+    console.log('Düzenli İşlem başarıyla Prisma\'ya eklendi:', result.id);
     
     return NextResponse.json({ 
       message: 'Düzenli işlem başarıyla eklendi.', 
@@ -112,7 +158,7 @@ export async function POST(request: Request) {
     }, { status: 201 });
     
   } catch (error) {
-    console.error('Düzenli işlem Supabase ekleme hatası:', error);
+    console.error('Düzenli işlem Prisma ekleme hatası:', error);
     
     // Hata ayrıntısı varsa göster
     const errorMessage = error instanceof Error 
@@ -129,6 +175,19 @@ export async function POST(request: Request) {
 // Düzenli işlem silme (DELETE metodu)
 export async function DELETE(request: Request) {
   try {
+    // Auth token'ını kontrol et
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
     const url = new URL(request.url);
     const id = url.searchParams.get('id');
     
@@ -138,10 +197,24 @@ export async function DELETE(request: Request) {
     
     console.log('Düzenli İşlem Silme - ID:', id);
     
-    // Supabase'den sil
-    await recurringOperations.delete(id);
+    // Önce işlemin var olup olmadığını ve kullanıcının işlemi olup olmadığını kontrol et
+    const transaction = await prisma.recurringTransaction.findFirst({
+      where: { 
+        id: id,
+        userId: decoded.userId // Güvenlik: Sadece kendi işlemini silebilsin
+      }
+    });
     
-    console.log('Düzenli İşlem başarıyla Supabase\'den silindi:', id);
+    if (!transaction) {
+      return NextResponse.json({ message: 'Silinecek düzenli işlem bulunamadı' }, { status: 404 });
+    }
+    
+    // Prisma'dan sil
+    await prisma.recurringTransaction.delete({
+      where: { id: id }
+    });
+    
+    console.log('Düzenli İşlem başarıyla Prisma\'dan silindi:', id);
     
     return NextResponse.json({ 
       message: 'Düzenli işlem başarıyla silindi.',
@@ -149,7 +222,7 @@ export async function DELETE(request: Request) {
     }, { status: 200 });
     
   } catch (error) {
-    console.error('Düzenli işlem Supabase silme hatası:', error);
+    console.error('Düzenli işlem Prisma silme hatası:', error);
     
     const errorMessage = error instanceof Error 
       ? error.message 

@@ -1,13 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { employeeOperations } from "@/lib/supabase-db";
+import { prisma } from "@/lib/db";
+import { validateToken } from "@/lib/auth";
 
-// GET - ID'ye göre çalışan getir (Supabase)
+// GET - ID'ye göre çalışan getir (Prisma)
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
-    console.log(`Çalışan detayları istendi - Supabase kullanılıyor, ID: ${id}`);
+    console.log(`Çalışan detayları istendi - Prisma kullanılıyor, ID: ${id}`);
 
-    const employee = await employeeOperations.getById(id);
+    // Auth token'ını kontrol et
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+
+    // Kullanıcının çalışanını getir
+    const employee = await prisma.employee.findFirst({
+      where: { 
+        id: id,
+        userId: decoded.userId // Güvenlik: Sadece kendi çalışanını görebilsin
+      }
+    });
 
     if (!employee) {
       return NextResponse.json(
@@ -22,18 +42,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       salary: employee.salary ? Number(employee.salary.toString()) : 0
     };
 
-    console.log(`Çalışan detayları Supabase'den başarıyla getirildi: ${id}`);
+    console.log(`Çalışan detayları Prisma'dan başarıyla getirildi: ${id}`);
     return NextResponse.json(processedEmployee);
   } catch (error: any) {
-    console.error("Çalışan Supabase'den getirilirken hata:", error);
-    
-    // Supabase no rows returned error
-    if (error.code === 'PGRST116') {
-      return NextResponse.json(
-        { error: "Çalışan bulunamadı" },
-        { status: 404 }
-      );
-    }
+    console.error("Çalışan Prisma'dan getirilirken hata:", error);
     
     return NextResponse.json(
       { error: "Çalışan getirilirken bir hata oluştu" },
@@ -42,47 +54,55 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// PATCH - Çalışanı güncelle (Supabase)
+// PATCH - Çalışanı güncelle (Prisma)
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
     const body = await req.json();
-    console.log(`Çalışan güncelleme isteği - Supabase kullanılıyor, ID: ${id}`);
+    console.log(`Çalışan güncelleme isteği - Prisma kullanılıyor, ID: ${id}`);
 
-    // Çalışanın var olup olmadığını kontrol et
-    try {
-      const existingEmployee = await employeeOperations.getById(id);
-      if (!existingEmployee) {
-        return NextResponse.json(
-          { error: "Çalışan bulunamadı" },
-          { status: 404 }
-        );
+    // Auth token'ını kontrol et
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+
+    // Çalışanın var olup olmadığını ve kullanıcının çalışanı olup olmadığını kontrol et
+    const existingEmployee = await prisma.employee.findFirst({
+      where: { 
+        id: id,
+        userId: decoded.userId // Güvenlik: Sadece kendi çalışanını güncelleyebilsin
       }
-    } catch (error: any) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: "Çalışan bulunamadı" },
-          { status: 404 }
-        );
-      }
-      throw error;
+    });
+    
+    if (!existingEmployee) {
+      return NextResponse.json(
+        { error: "Çalışan bulunamadı" },
+        { status: 404 }
+      );
     }
 
     // Verileri hazırla
-    const updateData: any = { 
-      updatedAt: new Date().toISOString() 
-    };
+    const updateData: any = {};
     
-    if (body.name) updateData.name = body.name;
+    if (body.firstName) updateData.firstName = body.firstName;
+    if (body.lastName) updateData.lastName = body.lastName;
     if (body.position) updateData.position = body.position;
     if (body.department) updateData.department = body.department;
-    if (body.startDate) updateData.startDate = new Date(body.startDate).toISOString();
+    if (body.startDate) updateData.startDate = new Date(body.startDate);
+    if (body.endDate) updateData.endDate = new Date(body.endDate);
     if (body.email !== undefined) updateData.email = body.email;
     if (body.phone !== undefined) updateData.phone = body.phone;
     if (body.address !== undefined) updateData.address = body.address;
-    if (body.taxId !== undefined) updateData.taxId = body.taxId;
-    if (body.socialSecurityNumber !== undefined) updateData.socialSecurityNumber = body.socialSecurityNumber;
-    if (body.bankAccount !== undefined) updateData.bankAccount = body.bankAccount;
+    if (body.tcNumber !== undefined) updateData.tcNumber = body.tcNumber;
+    if (body.sgkNumber !== undefined) updateData.sgkNumber = body.sgkNumber;
     if (body.status) updateData.status = body.status;
     
     // Maaş varsa ve geçerliyse güncelle
@@ -93,8 +113,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
     }
 
-    // Çalışanı Supabase'de güncelle
-    const updatedEmployee = await employeeOperations.update(id, updateData);
+    // Çalışanı Prisma'da güncelle
+    const updatedEmployee = await prisma.employee.update({
+      where: { id: id },
+      data: updateData
+    });
 
     // Decimal değerleri sayıya dönüştür
     const processedEmployee = {
@@ -102,10 +125,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       salary: updatedEmployee.salary ? Number(updatedEmployee.salary.toString()) : 0
     };
 
-    console.log(`Çalışan Supabase'de başarıyla güncellendi: ${id}`);
+    console.log(`Çalışan Prisma'da başarıyla güncellendi: ${id}`);
     return NextResponse.json(processedEmployee);
   } catch (error: any) {
-    console.error("Çalışan Supabase'de güncellenirken hata:", error);
+    console.error("Çalışan Prisma'da güncellenirken hata:", error);
     return NextResponse.json(
       { error: "Çalışan güncellenirken bir hata oluştu" },
       { status: 500 }
@@ -113,41 +136,52 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-// DELETE - Çalışanı sil (Supabase)
+// DELETE - Çalışanı sil (Prisma)
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
-    console.log(`Çalışan silme isteği - Supabase kullanılıyor, ID: ${id}`);
+    console.log(`Çalışan silme isteği - Prisma kullanılıyor, ID: ${id}`);
 
-    // Çalışanın var olup olmadığını kontrol et
-    try {
-      const existingEmployee = await employeeOperations.getById(id);
-      if (!existingEmployee) {
-        return NextResponse.json(
-          { error: "Çalışan bulunamadı" },
-          { status: 404 }
-        );
-      }
-    } catch (error: any) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: "Çalışan bulunamadı" },
-          { status: 404 }
-        );
-      }
-      throw error;
+    // Auth token'ını kontrol et
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
     }
 
-    // Çalışanı Supabase'den sil (ilişkili kayıtlar cascade silinecek)
-    await employeeOperations.delete(id);
+    // Çalışanın var olup olmadığını ve kullanıcının çalışanı olup olmadığını kontrol et
+    const existingEmployee = await prisma.employee.findFirst({
+      where: { 
+        id: id,
+        userId: decoded.userId // Güvenlik: Sadece kendi çalışanını silebilsin
+      }
+    });
+    
+    if (!existingEmployee) {
+      return NextResponse.json(
+        { error: "Çalışan bulunamadı" },
+        { status: 404 }
+      );
+    }
 
-    console.log(`Çalışan Supabase'den başarıyla silindi: ${id}`);
+    // Çalışanı Prisma'dan sil (ilişkili kayıtlar cascade silinecek)
+    await prisma.employee.delete({
+      where: { id: id }
+    });
+
+    console.log(`Çalışan Prisma'dan başarıyla silindi: ${id}`);
     return NextResponse.json(
       { message: "Çalışan başarıyla silindi" },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("Çalışan Supabase'den silinirken hata:", error);
+    console.error("Çalışan Prisma'dan silinirken hata:", error);
     return NextResponse.json(
       { error: "Çalışan silinirken bir hata oluştu" },
       { status: 500 }

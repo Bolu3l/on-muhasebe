@@ -169,22 +169,22 @@ export async function calculateVATForPeriod(startDate: Date, endDate: Date): Pro
     
     // Giden faturalardan toplanan KDV - InvoiceItem tablosunu kullanmak yerine doğrudan faturalardan hesapla
     const outgoingInvoices: any[] = await prisma.$queryRaw`
-      SELECT id, "invoiceNumber", "taxAmount"::numeric, "totalAmount"::numeric, "invoiceDate"
-      FROM "Invoice"
-      WHERE type = 'outgoing' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
+      SELECT id, "invoiceNumber", "vatAmount"::numeric, "totalAmount"::numeric, "invoiceDate"
+      FROM "invoices"
+      WHERE "invoiceType" = 'OUTGOING' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
     `;
     
     // Gelen faturalardan ödenen KDV - InvoiceItem tablosunu kullanmak yerine doğrudan faturalardan hesapla
     const incomingInvoices: any[] = await prisma.$queryRaw`
-      SELECT id, "invoiceNumber", "taxAmount"::numeric, "totalAmount"::numeric, "invoiceDate"
-      FROM "Invoice"
-      WHERE type = 'incoming' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
+      SELECT id, "invoiceNumber", "vatAmount"::numeric, "totalAmount"::numeric, "invoiceDate"
+      FROM "invoices"
+      WHERE "invoiceType" = 'INCOMING' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
     `;
     
     // Fiş giderlerinden ödenen KDV
     const receipts: any[] = await prisma.$queryRaw`
       SELECT id, "taxRate", "taxAmount"::numeric, "expenseDate"
-      FROM "ReceiptExpense"
+      FROM "receipt_expenses"
       WHERE "expenseDate" >= ${startDate} AND "expenseDate" <= ${endDate}
     `;
     
@@ -193,14 +193,14 @@ export async function calculateVATForPeriod(startDate: Date, endDate: Date): Pro
     
     // Toplanan KDV hesapla
     const vatCollected = outgoingInvoices.reduce((total, invoice) => {
-      const taxAmount = parseFloat(invoice.taxAmount || 0);
+      const taxAmount = parseFloat(invoice.vatAmount || 0);
       console.log(`Giden fatura #${invoice.invoiceNumber}, Tarih: ${invoice.invoiceDate}, KDV: ${taxAmount}`);
       return total + taxAmount;
     }, 0);
     
     // Ödenen KDV hesapla (faturalar + fişler)
     const vatPaidInvoices = incomingInvoices.reduce((total, invoice) => {
-      const taxAmount = parseFloat(invoice.taxAmount || 0);
+      const taxAmount = parseFloat(invoice.vatAmount || 0);
       console.log(`Gelen fatura #${invoice.invoiceNumber}, Tarih: ${invoice.invoiceDate}, KDV: ${taxAmount}`);
       return total + taxAmount;
     }, 0);
@@ -275,14 +275,14 @@ async function calculateTotalIncomeForPeriod(startDate: Date, endDate: Date): Pr
     // Giden faturalardan gelirler
     const invoiceIncome: any = await prisma.$queryRaw`
       SELECT SUM("totalAmount"::numeric) as total
-      FROM "Invoice"
-      WHERE type = 'outgoing' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
+      FROM "invoices"
+      WHERE "invoiceType" = 'OUTGOING' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
     `;
     
     // Düzenli gelirler
     const recurringIncome: any = await prisma.$queryRaw`
       SELECT SUM(amount::numeric) as total
-      FROM "RecurringTransaction"
+      FROM "recurring_transactions"
       WHERE type = 'income' AND "isActive" = true AND "startDate" <= ${endDate}
     `;
     
@@ -302,28 +302,28 @@ async function calculateTotalExpenseForPeriod(startDate: Date, endDate: Date): P
     // Gelen faturalardan giderler
     const invoiceExpense: any = await prisma.$queryRaw`
       SELECT SUM("totalAmount"::numeric) as total
-      FROM "Invoice"
-      WHERE type = 'incoming' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
+      FROM "invoices"
+      WHERE "invoiceType" = 'INCOMING' AND "invoiceDate" >= ${startDate} AND "invoiceDate" <= ${endDate}
     `;
     
     // Doğrudan giderler
     const directExpense: any = await prisma.$queryRaw`
       SELECT SUM(amount::numeric) as total
-      FROM "Expense"
+      FROM "expenses"
       WHERE "expenseDate" >= ${startDate} AND "expenseDate" <= ${endDate}
     `;
     
     // Fiş giderleri
     const receiptExpense: any = await prisma.$queryRaw`
       SELECT SUM("totalAmount"::numeric) as total
-      FROM "ReceiptExpense"
+      FROM "receipt_expenses"
       WHERE "expenseDate" >= ${startDate} AND "expenseDate" <= ${endDate}
     `;
     
     // Düzenli giderler
     const recurringExpense: any = await prisma.$queryRaw`
       SELECT SUM(amount::numeric) as total
-      FROM "RecurringTransaction"
+      FROM "recurring_transactions"
       WHERE type = 'expense' AND "isActive" = true AND "startDate" <= ${endDate}
     `;
     
@@ -453,9 +453,9 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         "invoiceNumber", 
         "totalAmount"::numeric as amount, 
         "invoiceDate", 
-        type, 
+        "invoiceType" as type, 
         status
-      FROM "Invoice"
+      FROM "invoices"
       WHERE "invoiceDate" IS NOT NULL
       ORDER BY "invoiceDate" DESC
     `;
@@ -468,7 +468,7 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         amount::numeric as amount, 
         "expenseDate", 
         category
-      FROM "Expense"
+      FROM "expenses"
       WHERE "expenseDate" IS NOT NULL
       ORDER BY "expenseDate" DESC
     `;
@@ -481,7 +481,7 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         "totalAmount"::numeric as amount, 
         "expenseDate", 
         category
-      FROM "ReceiptExpense"
+      FROM "receipt_expenses"
       WHERE "expenseDate" IS NOT NULL
       ORDER BY "expenseDate" DESC
     `;
@@ -496,7 +496,7 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         frequency,
         type,
         "isActive"
-      FROM "RecurringTransaction"
+      FROM "recurring_transactions"
       WHERE "isActive" = true
       ORDER BY "startDate" DESC
     `;
@@ -544,9 +544,9 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
       
       if (isNaN(amount)) continue;
       
-      if (invoice.type === 'outgoing') {
+      if (invoice.type === 'OUTGOING') {
         totalInvoiceIncome += amount;
-      } else if (invoice.type === 'incoming') {
+      } else if (invoice.type === 'INCOMING') {
         totalInvoiceExpense += amount;
       }
     }
@@ -626,8 +626,8 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
     // Bekleyen faturaları getir
     const pendingInvoicesResult: any[] = await prisma.$queryRaw`
       SELECT COUNT(*) as count, SUM("totalAmount")::numeric as total
-      FROM "Invoice"
-      WHERE status = 'pending' AND "isPaid" = false
+      FROM "invoices"
+      WHERE status = 'DRAFT' AND "isPaid" = false
     `;
     
     const pendingInvoices = {
@@ -642,8 +642,8 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         "invoiceNumber", 
         "totalAmount"::numeric as amount, 
         "invoiceDate"::text as date, 
-        type
-      FROM "Invoice"
+        "invoiceType" as type
+      FROM "invoices"
       ORDER BY "invoiceDate" DESC
       LIMIT 3
     `;
@@ -654,7 +654,7 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         title, 
         amount::numeric as amount, 
         "expenseDate"::text as date
-      FROM "Expense"
+      FROM "expenses"
       ORDER BY "expenseDate" DESC
       LIMIT 2
     `;
@@ -666,7 +666,7 @@ export async function getDashboardData(period: 'week' | 'month' | 'year' = 'mont
         date: invoice.date ? new Date(invoice.date) : new Date(),
         description: `Fatura #${invoice.invoiceNumber}`,
         amount: Number(invoice.amount),
-        type: invoice.type === 'outgoing' ? 'income' : 'expense'
+        type: invoice.type === 'OUTGOING' ? 'income' : 'expense'
       })),
       ...recentExpensesRaw.map(expense => ({
         id: expense.id,
@@ -748,7 +748,7 @@ export async function getInvoices(status?: string) {
     
     // Çok basit sorgu ile tüm verileri getir
     console.log('Tüm faturaları alıyoruz...');
-    const rawInvoices = await prisma.$queryRaw`SELECT * FROM "Invoice" LIMIT 10`;
+    const rawInvoices = await prisma.$queryRaw`SELECT * FROM "invoices" LIMIT 10`;
     console.log('Faturalar ham SQL sorgusuyla alındı:', rawInvoices);
     
     // Standart sorgu ile verileri getir
@@ -808,7 +808,7 @@ export async function getExpenses(category?: string) {
     
     // Çok basit sorgu ile tüm verileri getir
     console.log('Tüm giderleri alıyoruz...');
-    const rawExpenses = await prisma.$queryRaw`SELECT * FROM "Expense" LIMIT 10`;
+    const rawExpenses = await prisma.$queryRaw`SELECT * FROM "expenses" LIMIT 10`;
     console.log('Giderler ham SQL sorgusuyla alındı:', rawExpenses);
     
     // Standart sorgu ile verileri getir
@@ -887,7 +887,7 @@ export async function getRecurringTransactions(type?: string, isActive?: boolean
     
     // Çok basit sorgu ile tüm verileri getir
     console.log('Tüm düzenli işlemleri alıyoruz...');
-    const rawTransactions = await prisma.$queryRaw`SELECT * FROM "RecurringTransaction" LIMIT 10`;
+    const rawTransactions = await prisma.$queryRaw`SELECT * FROM "recurring_transactions" LIMIT 10`;
     console.log('Düzenli işlemler ham SQL sorgusuyla alındı:', rawTransactions);
     
     // Standart sorgu ile verileri getir
@@ -959,12 +959,7 @@ export async function getReceiptExpenses(category?: string) {
         totalAmount: true,
         paymentMethod: true,
         isVerified: true,
-        supplier: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+
       },
       orderBy: { expenseDate: 'desc' }
     });

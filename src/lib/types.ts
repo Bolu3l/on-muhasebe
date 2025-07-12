@@ -72,21 +72,28 @@ export interface Contact {
 
 export interface Expense {
   id: string;
+  userId: string;
+  companyId: string;
   title: string;
   description: string | null;
   amount: number;
+  vatAmount: number;
+  totalAmount: number;
   expenseDate: Date;
   category: string;
   paymentMethod: string;
   status: string;
-  receiptUrl: string | null;
-  supplierId: string | null;
+  contactId: string | null;
+  receiptNumber: string | null;
+  isDeductible: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface ReceiptExpense {
   id: string;
+  userId: string;
+  companyId: string;
   title: string;
   description: string | null;
   amount: number;
@@ -97,7 +104,7 @@ export interface ReceiptExpense {
   taxAmount: number;
   totalAmount: number;
   paymentMethod: string;
-  supplierId: string | null;
+  contactId: string | null;
   receiptImageUrl: string | null;
   isVerified: boolean;
   createdAt: Date;

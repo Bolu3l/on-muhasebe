@@ -1,17 +1,20 @@
-import { supabase, supabaseAdmin } from './supabase'
+import { supabase as supabaseClient, supabaseAdmin } from './supabase'
+
+// Use admin client for server-side operations
+const supabase = supabaseAdmin
 
 // Fatura işlemleri
 export const invoiceOperations = {
   // Tüm faturaları getir
   async getAll() {
     const { data, error } = await supabase
-      .from('Invoice')
+      .from('invoices')
       .select(`
         *,
-        customer:Contact!Invoice_customerId_fkey(*),
-        supplier:Contact!Invoice_supplierId_fkey(*),
-        items:InvoiceItem(*),
-        files:InvoiceFile(*)
+        customer:contacts!invoices_contactId_fkey(*),
+        client:customers!invoices_customerId_fkey(*),
+        items:invoice_items(*),
+        files:invoice_files(*)
       `)
       .order('createdAt', { ascending: false })
     
@@ -22,13 +25,13 @@ export const invoiceOperations = {
   // Belirli ID'ye sahip faturayı getir
   async getById(id: string) {
     const { data, error } = await supabase
-      .from('Invoice')
+      .from('invoices')
       .select(`
         *,
-        customer:Contact!Invoice_customerId_fkey(*),
-        supplier:Contact!Invoice_supplierId_fkey(*),
-        items:InvoiceItem(*),
-        files:InvoiceFile(*)
+        customer:contacts!invoices_contactId_fkey(*),
+        client:customers!invoices_customerId_fkey(*),
+        items:invoice_items(*),
+        files:invoice_files(*)
       `)
       .eq('id', id)
       .single()
@@ -40,7 +43,7 @@ export const invoiceOperations = {
   // Fatura oluştur
   async create(invoiceData: any) {
     const { data, error } = await supabase
-      .from('Invoice')
+      .from('invoices')
       .insert(invoiceData)
       .select()
       .single()
@@ -52,7 +55,7 @@ export const invoiceOperations = {
   // Fatura güncelle
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('Invoice')
+      .from('invoices')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -65,7 +68,7 @@ export const invoiceOperations = {
   // Fatura sil
   async delete(id: string) {
     const { error } = await supabase
-      .from('Invoice')
+      .from('invoices')
       .delete()
       .eq('id', id)
     
@@ -77,7 +80,7 @@ export const invoiceOperations = {
 export const contactOperations = {
   async getAll() {
     const { data, error } = await supabase
-      .from('Contact')
+      .from('contacts')
       .select('*')
       .order('name')
     
@@ -87,7 +90,7 @@ export const contactOperations = {
 
   async create(contactData: any) {
     const { data, error } = await supabase
-      .from('Contact')
+      .from('contacts')
       .insert(contactData)
       .select()
       .single()
@@ -98,7 +101,7 @@ export const contactOperations = {
 
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('Contact')
+      .from('contacts')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -109,16 +112,13 @@ export const contactOperations = {
   }
 }
 
-// Gider işlemleri
-export const expenseOperations = {
+// Müşteri işlemleri
+export const customerOperations = {
   async getAll() {
     const { data, error } = await supabase
-      .from('Expense')
-      .select(`
-        *,
-        Contact(*)
-      `)
-      .order('expenseDate', { ascending: false })
+      .from('customers')
+      .select('*')
+      .order('name')
     
     if (error) throw error
     return data
@@ -126,11 +126,8 @@ export const expenseOperations = {
 
   async getById(id: string) {
     const { data, error } = await supabase
-      .from('Expense')
-      .select(`
-        *,
-        Contact(*)
-      `)
+      .from('customers')
+      .select('*')
       .eq('id', id)
       .single()
     
@@ -138,10 +135,10 @@ export const expenseOperations = {
     return data
   },
 
-  async create(expenseData: any) {
+  async create(customerData: any) {
     const { data, error } = await supabase
-      .from('Expense')
-      .insert(expenseData)
+      .from('customers')
+      .insert(customerData)
       .select()
       .single()
     
@@ -151,7 +148,7 @@ export const expenseOperations = {
 
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('Expense')
+      .from('customers')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -163,7 +160,69 @@ export const expenseOperations = {
 
   async delete(id: string) {
     const { error } = await supabase
-      .from('Expense')
+      .from('customers')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+}
+
+// Gider işlemleri
+export const expenseOperations = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select(`
+        *,
+        contact:contacts(*)
+      `)
+      .order('expenseDate', { ascending: false })
+    
+    if (error) throw error
+    return data
+  },
+
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select(`
+        *,
+        contact:contacts(*)
+      `)
+      .eq('id', id)
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async create(expenseData: any) {
+    const { data, error } = await supabase
+      .from('expenses')
+      .insert(expenseData)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id: string, updateData: any) {
+    const { data, error } = await supabase
+      .from('expenses')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('expenses')
       .delete()
       .eq('id', id)
     
@@ -175,9 +234,9 @@ export const expenseOperations = {
 export const employeeOperations = {
   async getAll() {
     const { data, error } = await supabase
-      .from('Employee')
+      .from('employees')
       .select('*')
-      .order('name')
+      .order('firstName')
     
     if (error) throw error
     return data
@@ -185,11 +244,11 @@ export const employeeOperations = {
 
   async getById(id: string) {
     const { data, error } = await supabase
-      .from('Employee')
+      .from('employees')
       .select(`
         *,
-        salaryPayments:SalaryPayment(*),
-        leaveRequests:LeaveRequest(*)
+        salaryPayments:salary_payments(*),
+        leaveRequests:leave_requests(*)
       `)
       .eq('id', id)
       .single()
@@ -200,7 +259,7 @@ export const employeeOperations = {
 
   async create(employeeData: any) {
     const { data, error } = await supabase
-      .from('Employee')
+      .from('employees')
       .insert(employeeData)
       .select()
       .single()
@@ -211,7 +270,7 @@ export const employeeOperations = {
 
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('Employee')
+      .from('employees')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -223,7 +282,7 @@ export const employeeOperations = {
 
   async delete(id: string) {
     const { error } = await supabase
-      .from('Employee')
+      .from('employees')
       .delete()
       .eq('id', id)
     
@@ -235,10 +294,10 @@ export const employeeOperations = {
 export const recurringOperations = {
   async getAll() {
     const { data, error } = await supabase
-      .from('RecurringTransaction')
+      .from('recurring_transactions')
       .select(`
         *,
-        Contact(*)
+        contact:contacts(*)
       `)
       .order('createdAt', { ascending: false })
     
@@ -248,7 +307,7 @@ export const recurringOperations = {
 
   async create(recurringData: any) {
     const { data, error } = await supabase
-      .from('RecurringTransaction')
+      .from('recurring_transactions')
       .insert(recurringData)
       .select()
       .single()
@@ -259,7 +318,7 @@ export const recurringOperations = {
 
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('RecurringTransaction')
+      .from('recurring_transactions')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -271,7 +330,7 @@ export const recurringOperations = {
 
   async delete(id: string) {
     const { error } = await supabase
-      .from('RecurringTransaction')
+      .from('recurring_transactions')
       .delete()
       .eq('id', id)
     
@@ -303,7 +362,7 @@ export const fileOperations = {
 export const bonusTypeOperations = {
   async getAll() {
     const { data, error } = await supabase
-      .from('BonusType')
+      .from('bonus_types')
       .select('*')
       .order('name')
     
@@ -313,7 +372,7 @@ export const bonusTypeOperations = {
 
   async getById(id: string) {
     const { data, error } = await supabase
-      .from('BonusType')
+      .from('bonus_types')
       .select('*')
       .eq('id', id)
       .single()
@@ -324,7 +383,7 @@ export const bonusTypeOperations = {
 
   async create(bonusTypeData: any) {
     const { data, error } = await supabase
-      .from('BonusType')
+      .from('bonus_types')
       .insert(bonusTypeData)
       .select()
       .single()
@@ -335,7 +394,7 @@ export const bonusTypeOperations = {
 
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('BonusType')
+      .from('bonus_types')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -347,7 +406,7 @@ export const bonusTypeOperations = {
 
   async delete(id: string) {
     const { error } = await supabase
-      .from('BonusType')
+      .from('bonus_types')
       .delete()
       .eq('id', id)
     
@@ -359,10 +418,10 @@ export const bonusTypeOperations = {
 export const salaryPaymentOperations = {
   async getAll() {
     const { data, error } = await supabase
-      .from('SalaryPayment')
+      .from('salary_payments')
       .select(`
         *,
-        Employee(*)
+        employee:employees(*)
       `)
       .order('paymentDate', { ascending: false })
     
@@ -372,7 +431,7 @@ export const salaryPaymentOperations = {
 
   async getByEmployeeId(employeeId: string) {
     const { data, error } = await supabase
-      .from('SalaryPayment')
+      .from('salary_payments')
       .select('*')
       .eq('employeeId', employeeId)
       .order('paymentDate', { ascending: false })
@@ -383,7 +442,7 @@ export const salaryPaymentOperations = {
 
   async create(paymentData: any) {
     const { data, error } = await supabase
-      .from('SalaryPayment')
+      .from('salary_payments')
       .insert(paymentData)
       .select()
       .single()
@@ -394,7 +453,7 @@ export const salaryPaymentOperations = {
 
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('SalaryPayment')
+      .from('salary_payments')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -406,7 +465,7 @@ export const salaryPaymentOperations = {
 
   async delete(id: string) {
     const { error } = await supabase
-      .from('SalaryPayment')
+      .from('salary_payments')
       .delete()
       .eq('id', id)
     
@@ -418,10 +477,10 @@ export const salaryPaymentOperations = {
 export const leaveRequestOperations = {
   async getAll() {
     const { data, error } = await supabase
-      .from('LeaveRequest')
+      .from('leave_requests')
       .select(`
         *,
-        Employee(*)
+        employee:employees(*)
       `)
       .order('createdAt', { ascending: false })
     
@@ -431,10 +490,10 @@ export const leaveRequestOperations = {
 
   async getById(id: string) {
     const { data, error } = await supabase
-      .from('LeaveRequest')
+      .from('leave_requests')
       .select(`
         *,
-        Employee(*)
+        employee:employees(*)
       `)
       .eq('id', id)
       .single()
@@ -445,7 +504,7 @@ export const leaveRequestOperations = {
 
   async getByEmployeeId(employeeId: string) {
     const { data, error } = await supabase
-      .from('LeaveRequest')
+      .from('leave_requests')
       .select('*')
       .eq('employeeId', employeeId)
       .order('startDate', { ascending: false })
@@ -457,10 +516,10 @@ export const leaveRequestOperations = {
   async getActiveLeaves() {
     const today = new Date().toISOString().split('T')[0]
     const { data, error } = await supabase
-      .from('LeaveRequest')
+      .from('leave_requests')
       .select(`
         *,
-        Employee(*)
+        employee:employees(*)
       `)
       .eq('status', 'APPROVED')
       .lte('startDate', today)
@@ -472,7 +531,7 @@ export const leaveRequestOperations = {
 
   async create(leaveData: any) {
     const { data, error } = await supabase
-      .from('LeaveRequest')
+      .from('leave_requests')
       .insert(leaveData)
       .select()
       .single()
@@ -483,7 +542,7 @@ export const leaveRequestOperations = {
 
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('LeaveRequest')
+      .from('leave_requests')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -495,7 +554,7 @@ export const leaveRequestOperations = {
 
   async delete(id: string) {
     const { error } = await supabase
-      .from('LeaveRequest')
+      .from('leave_requests')
       .delete()
       .eq('id', id)
     
@@ -507,7 +566,7 @@ export const leaveRequestOperations = {
 export const employeeLeaveBalanceOperations = {
   async getByEmployeeId(employeeId: string) {
     const { data, error } = await supabase
-      .from('EmployeeLeaveBalance')
+      .from('employee_leave_balances')
       .select('*')
       .eq('employeeId', employeeId)
       .single()
@@ -518,7 +577,7 @@ export const employeeLeaveBalanceOperations = {
 
   async create(balanceData: any) {
     const { data, error } = await supabase
-      .from('EmployeeLeaveBalance')
+      .from('employee_leave_balances')
       .insert(balanceData)
       .select()
       .single()
@@ -529,7 +588,7 @@ export const employeeLeaveBalanceOperations = {
 
   async update(employeeId: string, updateData: any) {
     const { data, error } = await supabase
-      .from('EmployeeLeaveBalance')
+      .from('employee_leave_balances')
       .update(updateData)
       .eq('employeeId', employeeId)
       .select()
@@ -544,9 +603,9 @@ export const employeeLeaveBalanceOperations = {
 export const receiptExpenseOperations = {
   async getAll() {
     const { data, error } = await supabase
-      .from('ReceiptExpense')
+      .from('receipt_expenses')
       .select('*')
-      .order('date', { ascending: false })
+      .order('expenseDate', { ascending: false })
     
     if (error) throw error
     return data
@@ -554,7 +613,7 @@ export const receiptExpenseOperations = {
 
   async getById(id: string) {
     const { data, error } = await supabase
-      .from('ReceiptExpense')
+      .from('receipt_expenses')
       .select('*')
       .eq('id', id)
       .single()
@@ -565,7 +624,7 @@ export const receiptExpenseOperations = {
 
   async create(receiptData: any) {
     const { data, error } = await supabase
-      .from('ReceiptExpense')
+      .from('receipt_expenses')
       .insert(receiptData)
       .select()
       .single()
@@ -576,7 +635,7 @@ export const receiptExpenseOperations = {
 
   async update(id: string, updateData: any) {
     const { data, error } = await supabase
-      .from('ReceiptExpense')
+      .from('receipt_expenses')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -588,7 +647,7 @@ export const receiptExpenseOperations = {
 
   async delete(id: string) {
     const { error } = await supabase
-      .from('ReceiptExpense')
+      .from('receipt_expenses')
       .delete()
       .eq('id', id)
     
@@ -600,7 +659,7 @@ export const receiptExpenseOperations = {
 export const invoiceFileOperations = {
   async getByInvoiceId(invoiceId: string) {
     const { data, error } = await supabase
-      .from('InvoiceFile')
+      .from('invoice_files')
       .select('*')
       .eq('invoiceId', invoiceId)
     
@@ -610,7 +669,7 @@ export const invoiceFileOperations = {
 
   async getById(id: string) {
     const { data, error } = await supabase
-      .from('InvoiceFile')
+      .from('invoice_files')
       .select('*')
       .eq('id', id)
       .single()
@@ -621,7 +680,7 @@ export const invoiceFileOperations = {
 
   async create(fileData: any) {
     const { data, error } = await supabase
-      .from('InvoiceFile')
+      .from('invoice_files')
       .insert(fileData)
       .select()
       .single()
@@ -632,7 +691,7 @@ export const invoiceFileOperations = {
 
   async delete(id: string) {
     const { error } = await supabase
-      .from('InvoiceFile')
+      .from('invoice_files')
       .delete()
       .eq('id', id)
     

@@ -20,12 +20,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.7.0
- * Query Engine version: 3cff47a7f5d65c3ea74883f1d736e41d68ce91ed
+ * Prisma Client JS version: 6.11.1
+ * Query Engine version: f40f79ec31188888a2e33acda0ecc8fd10a853a9
  */
 Prisma.prismaVersion = {
-  client: "6.7.0",
-  engine: "3cff47a7f5d65c3ea74883f1d736e41d68ce91ed"
+  client: "6.11.1",
+  engine: "f40f79ec31188888a2e33acda0ecc8fd10a853a9"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -120,88 +120,205 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
+exports.Prisma.UserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  passwordHash: 'passwordHash',
+  role: 'role',
+  isEmailVerified: 'isEmailVerified',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CompanyScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  taxNumber: 'taxNumber',
+  taxOffice: 'taxOffice',
+  mersisNo: 'mersisNo',
+  address: 'address',
+  phone: 'phone',
+  email: 'email',
+  sector: 'sector',
+  activityCode: 'activityCode',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.InvoiceScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
   invoiceNumber: 'invoiceNumber',
+  invoiceType: 'invoiceType',
   invoiceDate: 'invoiceDate',
   dueDate: 'dueDate',
   amount: 'amount',
-  taxRate: 'taxRate',
-  taxAmount: 'taxAmount',
+  vatAmount: 'vatAmount',
   totalAmount: 'totalAmount',
+  currency: 'currency',
+  exchangeRate: 'exchangeRate',
   isPaid: 'isPaid',
   paymentDate: 'paymentDate',
   status: 'status',
-  type: 'type',
-  notes: 'notes',
+  contactId: 'contactId',
   customerId: 'customerId',
-  supplierId: 'supplierId',
+  notes: 'notes',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  issuerAddress: 'issuerAddress',
-  issuerName: 'issuerName',
-  issuerTaxId: 'issuerTaxId',
-  recipientAddress: 'recipientAddress',
-  recipientName: 'recipientName',
-  recipientTaxId: 'recipientTaxId'
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.InvoiceItemScalarFieldEnum = {
   id: 'id',
+  invoiceId: 'invoiceId',
+  productCode: 'productCode',
   description: 'description',
   quantity: 'quantity',
+  unitOfMeasure: 'unitOfMeasure',
   unitPrice: 'unitPrice',
   vatRate: 'vatRate',
   vatAmount: 'vatAmount',
+  discountRate: 'discountRate',
+  discountAmount: 'discountAmount',
   totalAmount: 'totalAmount',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EInvoiceScalarFieldEnum = {
+  id: 'id',
   invoiceId: 'invoiceId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.ContactScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  taxNumber: 'taxNumber',
-  taxOffice: 'taxOffice',
-  address: 'address',
-  phone: 'phone',
-  email: 'email',
-  isCustomer: 'isCustomer',
-  isSupplier: 'isSupplier',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.ExpenseScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  description: 'description',
-  amount: 'amount',
-  expenseDate: 'expenseDate',
-  category: 'category',
-  paymentMethod: 'paymentMethod',
+  eInvoiceUuid: 'eInvoiceUuid',
+  eInvoiceType: 'eInvoiceType',
+  profileId: 'profileId',
+  scenario: 'scenario',
   status: 'status',
-  receiptUrl: 'receiptUrl',
-  supplierId: 'supplierId',
+  qnbBelgeOid: 'qnbBelgeOid',
+  qnbResponse: 'qnbResponse',
+  gibResponse: 'gibResponse',
+  xmlContent: 'xmlContent',
+  errorMessage: 'errorMessage',
+  sentAt: 'sentAt',
+  deliveredAt: 'deliveredAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
 
 exports.Prisma.InvoiceFileScalarFieldEnum = {
   id: 'id',
+  invoiceId: 'invoiceId',
   filename: 'filename',
   fileKey: 'fileKey',
   fileSize: 'fileSize',
   mimeType: 'mimeType',
   uploadDate: 'uploadDate',
-  invoiceId: 'invoiceId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ContactScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
+  name: 'name',
+  taxNumber: 'taxNumber',
+  taxOffice: 'taxOffice',
+  address: 'address',
+  phone: 'phone',
+  email: 'email',
+  contactType: 'contactType',
+  isActive: 'isActive',
+  creditLimit: 'creditLimit',
+  paymentTerms: 'paymentTerms',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CustomerScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
+  customerCode: 'customerCode',
+  name: 'name',
+  companyName: 'companyName',
+  taxNumber: 'taxNumber',
+  taxOffice: 'taxOffice',
+  mersisNo: 'mersisNo',
+  address: 'address',
+  district: 'district',
+  city: 'city',
+  postalCode: 'postalCode',
+  country: 'country',
+  phone: 'phone',
+  mobile: 'mobile',
+  email: 'email',
+  website: 'website',
+  sector: 'sector',
+  customerType: 'customerType',
+  priceList: 'priceList',
+  paymentTerms: 'paymentTerms',
+  paymentMethod: 'paymentMethod',
+  creditLimit: 'creditLimit',
+  discountRate: 'discountRate',
+  currency: 'currency',
+  contactPerson: 'contactPerson',
+  contactTitle: 'contactTitle',
+  notes: 'notes',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ExpenseScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
+  title: 'title',
+  description: 'description',
+  amount: 'amount',
+  vatAmount: 'vatAmount',
+  totalAmount: 'totalAmount',
+  expenseDate: 'expenseDate',
+  category: 'category',
+  paymentMethod: 'paymentMethod',
+  status: 'status',
+  contactId: 'contactId',
+  receiptNumber: 'receiptNumber',
+  isDeductible: 'isDeductible',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ReceiptExpenseScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
+  title: 'title',
+  description: 'description',
+  amount: 'amount',
+  expenseDate: 'expenseDate',
+  category: 'category',
+  receiptNumber: 'receiptNumber',
+  taxRate: 'taxRate',
+  taxAmount: 'taxAmount',
+  totalAmount: 'totalAmount',
+  paymentMethod: 'paymentMethod',
+  contactId: 'contactId',
+  receiptImageUrl: 'receiptImageUrl',
+  isVerified: 'isVerified',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
 
 exports.Prisma.RecurringTransactionScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
   title: 'title',
   description: 'description',
   amount: 'amount',
@@ -220,28 +337,21 @@ exports.Prisma.RecurringTransactionScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.UserScalarFieldEnum = {
-  id: 'id',
-  email: 'email',
-  name: 'name',
-  passwordHash: 'passwordHash',
-  role: 'role',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
 exports.Prisma.EmployeeScalarFieldEnum = {
   id: 'id',
-  name: 'name',
+  userId: 'userId',
+  companyId: 'companyId',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  tcNumber: 'tcNumber',
+  sgkNumber: 'sgkNumber',
   position: 'position',
   department: 'department',
   startDate: 'startDate',
+  endDate: 'endDate',
   email: 'email',
   phone: 'phone',
   address: 'address',
-  taxId: 'taxId',
-  socialSecurityNumber: 'socialSecurityNumber',
-  bankAccount: 'bankAccount',
   salary: 'salary',
   status: 'status',
   createdAt: 'createdAt',
@@ -251,14 +361,17 @@ exports.Prisma.EmployeeScalarFieldEnum = {
 exports.Prisma.SalaryPaymentScalarFieldEnum = {
   id: 'id',
   employeeId: 'employeeId',
+  companyId: 'companyId',
+  grossSalary: 'grossSalary',
+  incomeTax: 'incomeTax',
+  socialSecurity: 'socialSecurity',
+  unemploymentInsurance: 'unemploymentInsurance',
+  netSalary: 'netSalary',
+  bonus: 'bonus',
   paymentDate: 'paymentDate',
-  amount: 'amount',
-  type: 'type',
-  taxAmount: 'taxAmount',
-  netAmount: 'netAmount',
-  notes: 'notes',
-  paymentMethod: 'paymentMethod',
+  paymentPeriod: 'paymentPeriod',
   status: 'status',
+  notes: 'notes',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -278,20 +391,6 @@ exports.Prisma.LeaveRequestScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.EmployeeDocumentScalarFieldEnum = {
-  id: 'id',
-  employeeId: 'employeeId',
-  title: 'title',
-  fileKey: 'fileKey',
-  fileSize: 'fileSize',
-  mimeType: 'mimeType',
-  uploadDate: 'uploadDate',
-  category: 'category',
-  notes: 'notes',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
 exports.Prisma.EmployeeLeaveBalanceScalarFieldEnum = {
   id: 'id',
   employeeId: 'employeeId',
@@ -303,6 +402,77 @@ exports.Prisma.EmployeeLeaveBalanceScalarFieldEnum = {
   lastUpdated: 'lastUpdated',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.BonusTypeScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  code: 'code',
+  isDefault: 'isDefault',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.TaxDeclarationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
+  declarationType: 'declarationType',
+  period: 'period',
+  year: 'year',
+  month: 'month',
+  calculatedTax: 'calculatedTax',
+  paidTax: 'paidTax',
+  status: 'status',
+  submissionDate: 'submissionDate',
+  dueDate: 'dueDate',
+  declarationData: 'declarationData',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.FileStorageScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
+  filename: 'filename',
+  originalName: 'originalName',
+  mimeType: 'mimeType',
+  fileSize: 'fileSize',
+  fileCategory: 'fileCategory',
+  storagePath: 'storagePath',
+  entityType: 'entityType',
+  invoiceId: 'invoiceId',
+  expenseId: 'expenseId',
+  contactId: 'contactId',
+  customerId: 'customerId',
+  employeeId: 'employeeId',
+  taxDeclarationId: 'taxDeclarationId',
+  isPublic: 'isPublic',
+  uploadedAt: 'uploadedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ActivityLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyId: 'companyId',
+  action: 'action',
+  entityType: 'entityType',
+  invoiceId: 'invoiceId',
+  expenseId: 'expenseId',
+  contactId: 'contactId',
+  customerId: 'customerId',
+  employeeId: 'employeeId',
+  salaryPaymentId: 'salaryPaymentId',
+  taxDeclarationId: 'taxDeclarationId',
+  oldData: 'oldData',
+  newData: 'newData',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -319,19 +489,56 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.UserRole = exports.$Enums.UserRole = {
+  ADMIN: 'ADMIN',
+  USER: 'USER',
+  ACCOUNTANT: 'ACCOUNTANT'
+};
+
+exports.InvoiceType = exports.$Enums.InvoiceType = {
+  INCOMING: 'INCOMING',
+  OUTGOING: 'OUTGOING'
+};
+
+exports.InvoiceStatus = exports.$Enums.InvoiceStatus = {
+  DRAFT: 'DRAFT',
+  SENT: 'SENT',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  CANCELLED: 'CANCELLED'
+};
+
+exports.EInvoiceStatus = exports.$Enums.EInvoiceStatus = {
+  PENDING: 'PENDING',
+  SENT: 'SENT',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  CANCELLED: 'CANCELLED'
+};
+
+exports.ContactType = exports.$Enums.ContactType = {
+  CUSTOMER: 'CUSTOMER',
+  SUPPLIER: 'SUPPLIER',
+  BOTH: 'BOTH'
+};
+
+exports.CustomerType = exports.$Enums.CustomerType = {
+  INDIVIDUAL: 'INDIVIDUAL',
+  CORPORATE: 'CORPORATE',
+  GOVERNMENT: 'GOVERNMENT'
+};
+
+exports.ExpenseStatus = exports.$Enums.ExpenseStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  PAID: 'PAID'
+};
+
 exports.EmployeeStatus = exports.$Enums.EmployeeStatus = {
   ACTIVE: 'ACTIVE',
   INACTIVE: 'INACTIVE',
-  ON_LEAVE: 'ON_LEAVE',
   TERMINATED: 'TERMINATED'
-};
-
-exports.SalaryPaymentType = exports.$Enums.SalaryPaymentType = {
-  SALARY: 'SALARY',
-  BONUS: 'BONUS',
-  ALLOWANCE: 'ALLOWANCE',
-  ADVANCE: 'ADVANCE',
-  OTHER: 'OTHER'
 };
 
 exports.PaymentStatus = exports.$Enums.PaymentStatus = {
@@ -357,19 +564,46 @@ exports.LeaveStatus = exports.$Enums.LeaveStatus = {
   CANCELLED: 'CANCELLED'
 };
 
+exports.DeclarationType = exports.$Enums.DeclarationType = {
+  VAT: 'VAT',
+  INCOME: 'INCOME',
+  WITHHOLDING: 'WITHHOLDING'
+};
+
+exports.DeclarationStatus = exports.$Enums.DeclarationStatus = {
+  DRAFT: 'DRAFT',
+  SUBMITTED: 'SUBMITTED',
+  APPROVED: 'APPROVED'
+};
+
+exports.FileCategory = exports.$Enums.FileCategory = {
+  INVOICE: 'INVOICE',
+  EXPENSE: 'EXPENSE',
+  EMPLOYEE: 'EMPLOYEE',
+  TAX: 'TAX',
+  OTHER: 'OTHER'
+};
+
 exports.Prisma.ModelName = {
+  User: 'User',
+  Company: 'Company',
   Invoice: 'Invoice',
   InvoiceItem: 'InvoiceItem',
-  Contact: 'Contact',
-  Expense: 'Expense',
+  EInvoice: 'EInvoice',
   InvoiceFile: 'InvoiceFile',
+  Contact: 'Contact',
+  Customer: 'Customer',
+  Expense: 'Expense',
+  ReceiptExpense: 'ReceiptExpense',
   RecurringTransaction: 'RecurringTransaction',
-  User: 'User',
   Employee: 'Employee',
   SalaryPayment: 'SalaryPayment',
   LeaveRequest: 'LeaveRequest',
-  EmployeeDocument: 'EmployeeDocument',
-  EmployeeLeaveBalance: 'EmployeeLeaveBalance'
+  EmployeeLeaveBalance: 'EmployeeLeaveBalance',
+  BonusType: 'BonusType',
+  TaxDeclaration: 'TaxDeclaration',
+  FileStorage: 'FileStorage',
+  ActivityLog: 'ActivityLog'
 };
 
 /**
