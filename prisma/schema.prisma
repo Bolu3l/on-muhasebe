@@ -602,6 +602,7 @@ enum EmployeeStatus {
   ACTIVE
   INACTIVE
   TERMINATED
+  ON_LEAVE
 }
 
 enum PaymentStatus {
