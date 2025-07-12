@@ -29,7 +29,8 @@ export async function GET() {
         take: 3,
         select: {
           id: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           position: true,
           salary: true
         }
