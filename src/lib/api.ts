@@ -733,7 +733,11 @@ export async function getInvoices(status?: string) {
     console.log('getInvoices API çağrısı yapılıyor...');
     console.log('Veritabanı URL:', process.env.DATABASE_URL);
     
-    const statusFilter = status ? { status } : {};
+    // Status'u enum değerine çevir ve geçerli olup olmadığını kontrol et
+    const validStatuses = ['DRAFT', 'SENT', 'ACCEPTED', 'REJECTED', 'CANCELLED'];
+    const statusFilter = (status && validStatuses.includes(status.toUpperCase())) 
+      ? { status: status.toUpperCase() as any } 
+      : {};
     
     // Toplam kayıt sayısını kontrol et
     const count = await prisma.invoice.count({
@@ -761,7 +765,7 @@ export async function getInvoices(status?: string) {
         dueDate: true,
         totalAmount: true,
         status: true,
-        type: true,
+        invoiceType: true,
         customer: {
           select: {
             id: true,
@@ -847,9 +851,9 @@ export async function getExpenses(category?: string) {
 export async function getContacts(type?: 'customer' | 'supplier') {
   try {
     const typeFilter = type === 'customer' 
-      ? { isCustomer: true }
+      ? { contactType: 'CUSTOMER' as any }
       : type === 'supplier'
-        ? { isSupplier: true }
+        ? { contactType: 'SUPPLIER' as any }
         : {};
     
     const contacts = await prisma.contact.findMany({
