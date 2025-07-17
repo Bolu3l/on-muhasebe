@@ -24,6 +24,16 @@ export default function SettingsPage() {
             </p>
           </Link>
           
+          <Link 
+            href="/dashboard/settings/customers"
+            className="p-4 border border-gray-200 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition duration-150"
+          >
+            <h3 className="font-medium text-gray-900 dark:text-white mb-1">Müşteri Yönetimi</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Müşterilerinizi görüntüleyin, düzenleyin ve yönetin
+            </p>
+          </Link>
+          
           <div className="p-4 border border-gray-200 dark:border-dark-border rounded-lg opacity-60 cursor-not-allowed">
             <h3 className="font-medium text-gray-900 dark:text-white mb-1">Şirket Bilgileri</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">

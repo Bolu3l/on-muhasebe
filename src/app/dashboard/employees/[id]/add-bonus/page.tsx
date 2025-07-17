@@ -55,10 +55,24 @@ export default function AddEmployeeBonus() {
     try {
       setLoadingBonusTypes(true);
       
-      const response = await fetch('/api/bonus-types?active=true');
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.error('Token bulunamadı');
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
+      const response = await fetch('/api/bonus-types?active=true', { headers });
       
       if (!response.ok) {
-        throw new Error('Prim tipleri getirilemedi');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Prim tipleri getirilemedi');
       }
       
       const data = await response.json();
@@ -73,6 +87,7 @@ export default function AddEmployeeBonus() {
       }
     } catch (err) {
       console.error('Prim tipleri getirilirken hata:', err);
+      setError('Prim tipleri yüklenirken bir hata oluştu: ' + (err instanceof Error ? err.message : 'Bilinmeyen hata'));
     } finally {
       setLoadingBonusTypes(false);
     }
@@ -89,7 +104,19 @@ export default function AddEmployeeBonus() {
           return;
         }
         
-        const response = await fetch(`/api/employees/${employeeId}`);
+        // localStorage'dan token'ı al
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+          return;
+        }
+        
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+        
+        const response = await fetch(`/api/employees/${employeeId}`, { headers });
         
         if (response.status === 404) {
           setError("Çalışan bulunamadı");
@@ -142,12 +169,23 @@ export default function AddEmployeeBonus() {
         throw new Error("Lütfen bir prim tipi seçin");
       }
       
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        setSaving(false);
+        return;
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
       // API'ye prim ödemesi gönder
       const response = await fetch(`/api/employees/${employeeId}/payments`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           ...formData,
           amount,

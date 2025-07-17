@@ -26,18 +26,31 @@ export default function EmployeesPage() {
     const fetchEmployees = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/employees');
+        
+        // localStorage'dan token'ı al
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        }
+        
+        const response = await fetch('/api/employees', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        });
         
         if (!response.ok) {
           throw new Error('Personel verileri getirilemedi');
         }
         
         const data = await response.json();
+        console.log('Personel verileri:', data);
         setEmployees(data);
         setError(null);
       } catch (err) {
         console.error('Personel verilerini getirme hatası:', err);
-        setError('Personel verileri yüklenirken bir hata oluştu');
+        setError('Personel verileri yüklenirken bir hata oluştu: ' + (err instanceof Error ? err.message : 'Bilinmeyen hata'));
       } finally {
         setLoading(false);
       }

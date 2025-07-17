@@ -51,7 +51,19 @@ export default function AddEmployeeLeave() {
           return;
         }
         
-        const response = await fetch(`/api/employees/${employeeId}`);
+        // localStorage'dan token'ı al
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+          return;
+        }
+        
+        const response = await fetch(`/api/employees/${employeeId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        });
         
         if (response.status === 404) {
           setError("Çalışan bulunamadı");
@@ -66,7 +78,7 @@ export default function AddEmployeeLeave() {
         setEmployee(data);
       } catch (err) {
         console.error("Çalışan verilerini getirme hatası:", err);
-        setError("Çalışan bilgileri yüklenirken bir hata oluştu");
+        setError("Çalışan bilgileri yüklenirken bir hata oluştu: " + (err instanceof Error ? err.message : 'Bilinmeyen hata'));
       } finally {
         setLoading(false);
       }
@@ -124,19 +136,29 @@ export default function AddEmployeeLeave() {
         throw new Error("Bitiş tarihi başlangıç tarihinden önce olamaz");
       }
       
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+      }
+      
       // API'ye izin talebini gönder
       const response = await fetch(`/api/employees/${employeeId}/leaves`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       });
       
       const data = await response.json();
+      console.log('Leave API Response:', data);
       
       if (!response.ok) {
-        throw new Error(data.error || "İzin kaydedilirken bir hata oluştu");
+        const errorMessage = data.error || "İzin kaydedilirken bir hata oluştu";
+        const errorDetails = data.details ? ` - ${data.details}` : '';
+        throw new Error(errorMessage + errorDetails);
       }
       
       // Başarılı kayıt sonrası personel detay sayfasına yönlendir

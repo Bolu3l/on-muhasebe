@@ -4,13 +4,13 @@ import * as soap from 'soap';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
-const CONNECTOR_SERVICE_WSDL = 'https://erpefaturatest1.qnbesolutions.com.tr/efatura/ws/connectorService?wsdl';
+const CONNECTOR_SERVICE_WSDL = 'https://erpefaturatest2.qnbesolutions.com.tr/efatura/ws/connectorService?wsdl';
 
-// QNB Test Account 1 credentials
+// QNB Test Account 2 credentials - 0010963800
 const TEST_ACCOUNT = {
-  USERNAME: '0010963799',
+  USERNAME: '0010963800',
   PASSWORD: 'Bolu3.12',
-  VKN: '0010963799'
+  VKN: '0010963800'
 };
 
 export async function POST() {
@@ -33,7 +33,7 @@ export async function POST() {
     console.log('🔧 SOAP Client oluşturuluyor...');
     const client = await soap.createClientAsync(CONNECTOR_SERVICE_WSDL);
     
-    // QNB WS-Security header ekle
+    // QNB WS-Security header ekle - QNB'nin verdiği doğru format
     console.log('🔐 WS-Security header ekleniyor...');
     const wsSecurityHeader = {
       'wsse:Security': {

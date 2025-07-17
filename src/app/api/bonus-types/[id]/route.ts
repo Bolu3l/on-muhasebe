@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { bonusTypeOperations } from "@/lib/supabase-db";
+import { prisma } from "@/lib/db";
+import { validateToken } from "@/lib/auth";
 
-// GET - Belirli bir prim tipini getir (Supabase)
+// GET - Belirli bir prim tipini getir (Prisma)
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
-    console.log(`Prim tipi detayları istendi - Supabase kullanılıyor, ID: ${id}`);
+    console.log(`Prim tipi detayları istendi - Prisma kullanılıyor, ID: ${id}`);
     
-    const bonusType = await bonusTypeOperations.getById(id);
+    // Auth token'ını kontrol et
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
+    
+    const bonusType = await prisma.bonusType.findUnique({
+      where: { id: id }
+    });
     
     if (!bonusType) {
       return NextResponse.json(
@@ -16,18 +32,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       );
     }
     
-    console.log(`Prim tipi detayları Supabase'den başarıyla getirildi: ${id}`);
+    console.log(`Prim tipi detayları Prisma'dan başarıyla getirildi: ${id}`);
     return NextResponse.json(bonusType);
   } catch (error: any) {
-    console.error("Prim tipi Supabase'den getirilirken hata:", error);
-    
-    // Supabase no rows returned error
-    if (error.code === 'PGRST116') {
-      return NextResponse.json(
-        { error: "Prim tipi bulunamadı" },
-        { status: 404 }
-      );
-    }
+    console.error("Prim tipi Prisma'dan getirilirken hata:", error);
     
     return NextResponse.json(
       { error: "Prim tipi getirilirken bir hata oluştu" },
@@ -36,26 +44,30 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// PATCH - Prim tipini güncelle (Supabase)
+// PATCH - Prim tipini güncelle (Prisma)
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
     const body = await req.json();
-    console.log(`Prim tipi güncelleme isteği - Supabase kullanılıyor, ID: ${id}`);
+    console.log(`Prim tipi güncelleme isteği - Prisma kullanılıyor, ID: ${id}`);
+    
+    // Auth token'ını kontrol et
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
     
     // Prim tipinin varlığını kontrol et
-    let bonusType;
-    try {
-      bonusType = await bonusTypeOperations.getById(id);
-    } catch (error: any) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: "Prim tipi bulunamadı" },
-          { status: 404 }
-        );
-      }
-      throw error;
-    }
+    const bonusType = await prisma.bonusType.findUnique({
+      where: { id: id }
+    });
     
     if (!bonusType) {
       return NextResponse.json(
@@ -76,20 +88,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     
     // Güncelleme verilerini hazırla
-    const updateData: any = {
-      updatedAt: new Date().toISOString()
-    };
+    const updateData: any = {};
     if (body.name) updateData.name = body.name;
     if (!bonusType.isDefault && body.code) updateData.code = body.code;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
     
-    // Prim tipini Supabase'de güncelle
-    const updatedBonusType = await bonusTypeOperations.update(id, updateData);
+    // Prim tipini Prisma'da güncelle
+    const updatedBonusType = await prisma.bonusType.update({
+      where: { id: id },
+      data: updateData
+    });
     
-    console.log(`Prim tipi Supabase'de başarıyla güncellendi: ${id}`);
+    console.log(`Prim tipi Prisma'da başarıyla güncellendi: ${id}`);
     return NextResponse.json(updatedBonusType);
   } catch (error: any) {
-    console.error("Prim tipi Supabase'de güncellenirken hata:", error);
+    console.error("Prim tipi Prisma'da güncellenirken hata:", error);
     return NextResponse.json(
       { error: "Prim tipi güncellenirken bir hata oluştu" },
       { status: 500 }
@@ -97,25 +110,29 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-// DELETE - Prim tipini sil (yalnızca varsayılan olmayanlar) (Supabase)
+// DELETE - Prim tipini sil (yalnızca varsayılan olmayanlar) (Prisma)
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = params.id;
-    console.log(`Prim tipi silme isteği - Supabase kullanılıyor, ID: ${id}`);
+    console.log(`Prim tipi silme isteği - Prisma kullanılıyor, ID: ${id}`);
+    
+    // Auth token'ını kontrol et
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Token gerekli' }, { status: 401 });
+    }
+    
+    const decoded = validateToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
+    }
     
     // Prim tipinin varlığını kontrol et
-    let bonusType;
-    try {
-      bonusType = await bonusTypeOperations.getById(id);
-    } catch (error: any) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: "Prim tipi bulunamadı" },
-          { status: 404 }
-        );
-      }
-      throw error;
-    }
+    const bonusType = await prisma.bonusType.findUnique({
+      where: { id: id }
+    });
     
     if (!bonusType) {
       return NextResponse.json(
@@ -132,16 +149,18 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       );
     }
     
-    // Prim tipini Supabase'den sil
-    await bonusTypeOperations.delete(id);
+    // Prim tipini Prisma'dan sil
+    await prisma.bonusType.delete({
+      where: { id: id }
+    });
     
-    console.log(`Prim tipi Supabase'den başarıyla silindi: ${id}`);
+    console.log(`Prim tipi Prisma'dan başarıyla silindi: ${id}`);
     return NextResponse.json(
       { message: "Prim tipi başarıyla silindi" },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("Prim tipi Supabase'den silinirken hata:", error);
+    console.error("Prim tipi Prisma'dan silinirken hata:", error);
     return NextResponse.json(
       { error: "Prim tipi silinirken bir hata oluştu" },
       { status: 500 }

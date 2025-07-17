@@ -6,11 +6,13 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seed işlemi başlatılıyor...');
 
-  // Test kullanıcısı oluştur
+  // Test kullanıcısı oluştur veya güncelle
   const hashedPassword = await bcrypt.hash('test123', 10);
   
-  const user = await prisma.user.create({
-    data: {
+  const user = await prisma.user.upsert({
+    where: { email: 'test@onmuhasebe.com' },
+    update: {},
+    create: {
       email: 'test@onmuhasebe.com',
       name: 'Test Kullanıcı',
       passwordHash: hashedPassword,
@@ -20,11 +22,13 @@ async function main() {
     },
   });
 
-  console.log('Test kullanıcısı oluşturuldu:', user.email);
+  console.log('Test kullanıcısı hazırlandı:', user.email);
 
-  // Test şirketi oluştur
-  const company = await prisma.company.create({
-    data: {
+  // Test şirketi oluştur veya güncelle
+  const company = await prisma.company.upsert({
+    where: { userId: user.id },
+    update: {},
+    create: {
       userId: user.id,
       name: 'Test Şirketi A.Ş.',
       taxNumber: '1234567890',
@@ -39,11 +43,18 @@ async function main() {
     },
   });
 
-  console.log('Test şirketi oluşturuldu:', company.name);
+  console.log('Test şirketi hazırlandı:', company.name);
 
-  // Test müşteri oluştur
-  const customer = await prisma.contact.create({
-    data: {
+  // Test müşteri oluştur veya güncelle
+  const customer = await prisma.contact.upsert({
+    where: { 
+      userId_taxNumber: { 
+        userId: user.id, 
+        taxNumber: '9876543210' 
+      } 
+    },
+    update: {},
+    create: {
       userId: user.id,
       companyId: company.id,
       name: 'Örnek Müşteri Ltd. Şti.',
@@ -59,11 +70,18 @@ async function main() {
     },
   });
 
-  console.log('Test müşteri oluşturuldu:', customer.name);
+  console.log('Test müşteri hazırlandı:', customer.name);
 
-  // Test tedarikçi oluştur
-  const supplier = await prisma.contact.create({
-    data: {
+  // Test tedarikçi oluştur veya güncelle
+  const supplier = await prisma.contact.upsert({
+    where: { 
+      userId_taxNumber: { 
+        userId: user.id, 
+        taxNumber: '1357924680' 
+      } 
+    },
+    update: {},
+    create: {
       userId: user.id,
       companyId: company.id,
       name: 'Tedarikçi A.Ş.',
@@ -78,11 +96,18 @@ async function main() {
     },
   });
 
-  console.log('Test tedarikçi oluşturuldu:', supplier.name);
+  console.log('Test tedarikçi hazırlandı:', supplier.name);
 
-  // Test çalışan oluştur
-  const employee = await prisma.employee.create({
-    data: {
+  // Test çalışan oluştur veya güncelle
+  const employee = await prisma.employee.upsert({
+    where: { 
+      userId_tcNumber: { 
+        userId: user.id, 
+        tcNumber: '12345678901' 
+      } 
+    },
+    update: {},
+    create: {
       userId: user.id,
       companyId: company.id,
       firstName: 'Ahmet',
@@ -100,7 +125,51 @@ async function main() {
     },
   });
 
-  console.log('Test çalışan oluşturuldu:', employee.firstName, employee.lastName);
+  console.log('Test çalışan hazırlandı:', employee.firstName, employee.lastName);
+
+  // Varsayılan prim tiplerini oluştur
+  const bonusTypes = [
+    {
+      name: 'Performans Primi',
+      code: 'PERFORMANCE',
+      isDefault: true,
+      isActive: true,
+    },
+    {
+      name: 'Satış Primi',
+      code: 'SALES',
+      isDefault: true,
+      isActive: true,
+    },
+    {
+      name: 'Yıl Sonu Primi',
+      code: 'YEAR_END',
+      isDefault: true,
+      isActive: true,
+    },
+    {
+      name: 'Proje Primi',
+      code: 'PROJECT',
+      isDefault: true,
+      isActive: true,
+    },
+    {
+      name: 'Fazla Mesai Primi',
+      code: 'OVERTIME',
+      isDefault: true,
+      isActive: true,
+    },
+  ];
+
+  for (const bonusType of bonusTypes) {
+    await prisma.bonusType.upsert({
+      where: { code: bonusType.code },
+      update: {},
+      create: bonusType,
+    });
+  }
+
+  console.log('Varsayılan prim tipleri hazırlandı');
 
   console.log('Seed işlemi tamamlandı!');
   console.log('Giriş bilgileri:');

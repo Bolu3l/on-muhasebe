@@ -6,6 +6,7 @@ import { getDashboardData } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { DashboardData, TaxDuty } from "@/lib/types";
 import { FaFileInvoice, FaMoneyBillWave, FaUserTie, FaCalendarAlt, FaChartPie, FaReceipt, FaBalanceScale, FaExclamationTriangle, FaCalculator } from 'react-icons/fa';
+import { getAuthHeaders } from '@/lib/auth';
 
 const StatCard = ({ title, value, subtext, icon, className = "" }: { title: string; value: string; subtext: string; icon: React.ReactNode, className?: string }) => (
   <div className={`bg-white dark:bg-dark-card p-6 rounded-lg shadow-sm border border-gray-200 dark:border-dark-border ${className}`}>
@@ -79,10 +80,14 @@ export default function Dashboard() {
       try {
         setLoading(true);
         
+        const authHeaders = getAuthHeaders();
+        
         // API'den Fatura verilerini al
         try {
           console.log(`Dashboard verilerini ${selectedPeriod} periyodu için yüklüyorum...`);
-          const response = await fetch(`/api/dashboard?period=${selectedPeriod}`);
+          const response = await fetch(`/api/dashboard?period=${selectedPeriod}`, {
+            headers: authHeaders
+          });
           if (response.ok) {
             const data = await response.json();
             setDashboardData(data);
@@ -98,7 +103,9 @@ export default function Dashboard() {
         
         // Tüm faturaları al (gelir hesaplaması için outgoing faturaları kullanacağız)
         try {
-          const invoiceResponse = await fetch('/api/invoices');
+          const invoiceResponse = await fetch('/api/invoices', {
+            headers: authHeaders
+          });
           if (invoiceResponse.ok) {
             const invoiceData = await invoiceResponse.json();
             setInvoicesData(invoiceData || []);
@@ -109,7 +116,9 @@ export default function Dashboard() {
         
         // Giderler verilerini al 
         try {
-          const expenseResponse = await fetch('/api/expenses');
+          const expenseResponse = await fetch('/api/expenses', {
+            headers: authHeaders
+          });
           if (expenseResponse.ok) {
             const expenseData = await expenseResponse.json();
             setExpensesData(expenseData || []);
@@ -120,7 +129,9 @@ export default function Dashboard() {
         
         // Düzenli İşlemler verilerini al
         try {
-          const recurringResponse = await fetch('/api/recurring');
+          const recurringResponse = await fetch('/api/recurring', {
+            headers: authHeaders
+          });
           if (recurringResponse.ok) {
             const recurringData = await recurringResponse.json();
             setRecurringData(recurringData || []);
@@ -131,7 +142,9 @@ export default function Dashboard() {
         
         // Personel verilerini al
         try {
-          const employeeResponse = await fetch('/api/employees');
+          const employeeResponse = await fetch('/api/employees', {
+            headers: authHeaders
+          });
           if (employeeResponse.ok) {
             const employeeData = await employeeResponse.json();
             setEmployeeData(employeeData || []);
@@ -142,7 +155,9 @@ export default function Dashboard() {
         
         // Fiş giderleri verilerini al
         try {
-          const receiptResponse = await fetch('/api/receipts');
+          const receiptResponse = await fetch('/api/receipts', {
+            headers: authHeaders
+          });
           if (receiptResponse.ok) {
             const receiptData = await receiptResponse.json();
             setReceiptData(receiptData || []);

@@ -5,6 +5,7 @@ import { getRecurringTransactions } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { FaEye, FaEdit, FaTrash } from 'react-icons/fa';
 import Link from "next/link";
+import { getAuthHeaders } from '@/lib/auth';
 
 interface RecurringTransaction {
   id: string;
@@ -38,9 +39,13 @@ export default function RecurringTransactionsPage() {
       try {
         setIsLoading(true);
         
+        const authHeaders = getAuthHeaders();
+        
         // Önce doğrudan API endpoint'ini dene
         try {
-          const response = await fetch('/api/recurring');
+          const response = await fetch('/api/recurring', {
+            headers: authHeaders
+          });
           if (response.ok) {
             const data = await response.json();
             if (data && data.length > 0) {
@@ -76,17 +81,19 @@ export default function RecurringTransactionsPage() {
           setFilteredItems(transformedData);
         }
         
+        setIsLoading(false);
         setError(null);
-      } catch (err: any) {
-        console.error("Düzenli işlemler yüklenirken hata oluştu:", err);
-        setError("Düzenli işlem verileri yüklenemedi: " + err.message);
-      } finally {
+      } catch (error: any) {
+        console.error('Düzenli işlemler yüklenirken hata:', error);
+        setError(`Düzenli işlemler yüklenemedi: ${error.message}`);
         setIsLoading(false);
       }
     }
     
+    if (mounted) {
     loadRecurringTransactions();
-  }, []);
+    }
+  }, [mounted]);
 
   // Filtreleme
   useEffect(() => {

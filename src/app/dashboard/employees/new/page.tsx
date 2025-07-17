@@ -287,7 +287,7 @@ export default function NewEmployeePage() {
             {/* T.C. Kimlik No */}
             <div>
               <label htmlFor="taxId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                T.C. Kimlik No
+                T.C. Kimlik No <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -295,6 +295,8 @@ export default function NewEmployeePage() {
                 name="taxId"
                 value={formData.taxId}
                 onChange={handleChange}
+                required
+                placeholder="11 haneli TC kimlik numarası"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-dark-card dark:text-white"
               />
             </div>

@@ -116,7 +116,13 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
+            <p className="text-sm text-gray-600">
+              Hesabınız yok mu?{' '}
+              <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+                Hesap Oluştur
+              </a>
+            </p>
             <p className="text-sm text-gray-600">
               Test hesabı: <span className="font-semibold">test@onmuhasebe.com</span> / <span className="font-semibold">test123</span>
             </p>

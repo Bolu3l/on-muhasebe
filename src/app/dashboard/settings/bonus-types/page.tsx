@@ -39,10 +39,23 @@ export default function BonusTypesPage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/bonus-types');
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
+      const response = await fetch('/api/bonus-types', { headers });
       
       if (!response.ok) {
-        throw new Error('Prim tipleri getirilemedi');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Prim tipleri getirilemedi');
       }
       
       const data = await response.json();
@@ -61,7 +74,7 @@ export default function BonusTypesPage() {
       setBonusTypes(sortedData);
     } catch (err) {
       console.error('Prim tipleri getirilirken hata:', err);
-      setError('Prim tipleri yüklenirken bir hata oluştu');
+      setError('Prim tipleri yüklenirken bir hata oluştu: ' + (err instanceof Error ? err.message : 'Bilinmeyen hata'));
     } finally {
       setLoading(false);
     }
@@ -75,16 +88,27 @@ export default function BonusTypesPage() {
   // Prim tipinin durumunu değiştir (aktif/pasif)
   const toggleBonusTypeStatus = async (id: string, currentStatus: boolean) => {
     try {
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
       const response = await fetch(`/api/bonus-types/${id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ isActive: !currentStatus }),
       });
       
       if (!response.ok) {
-        throw new Error('Prim tipi durumu güncellenemedi');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Prim tipi durumu güncellenemedi');
       }
       
       // Listeyi güncelle
@@ -94,7 +118,7 @@ export default function BonusTypesPage() {
       
     } catch (err) {
       console.error('Prim tipi durumu güncellenirken hata:', err);
-      setError('Prim tipi durumu güncellenirken bir hata oluştu');
+      setError('Prim tipi durumu güncellenirken bir hata oluştu: ' + (err instanceof Error ? err.message : 'Bilinmeyen hata'));
     }
   };
   
@@ -116,12 +140,27 @@ export default function BonusTypesPage() {
     
     try {
       setDeleting(true);
+      
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setFormError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        closeDeleteModal();
+        return;
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
       const response = await fetch(`/api/bonus-types/${deleteTarget.id}`, {
         method: 'DELETE',
+        headers,
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Prim tipi silinemedi');
       }
       
@@ -187,12 +226,23 @@ export default function BonusTypesPage() {
         throw new Error('Prim tipi kodu boş olamaz');
       }
       
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setFormError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        setSaving(false);
+        return;
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
       // API'ye gönder
       const response = await fetch('/api/bonus-types', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(formData),
       });
       

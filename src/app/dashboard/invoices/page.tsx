@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getInvoices } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { FaEye, FaEdit, FaTrash } from 'react-icons/fa';
+import { getAuthHeaders } from '@/lib/auth';
 
 export default function InvoicesPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -56,39 +57,39 @@ export default function InvoicesPage() {
     async function loadInvoices() {
       try {
         setIsLoading(true);
+        setError(null);
         
-        // Önce doğrudan API endpoint'ini dene
-        try {
-          const response = await fetch('/api/invoices');
-          if (response.ok) {
-            const data = await response.json();
-            if (data && data.length > 0) {
-              console.log("Fatura verileri:", data);
-              setInvoices(data);
-              setFilteredInvoices(data);
-              setIsLoading(false);
-              return;
-            }
+        // Sadece API endpoint'ini kullan
+        const authHeaders = getAuthHeaders();
+        console.log('Faturalar API çağrılıyor...');
+        
+        const response = await fetch('/api/invoices', {
+          headers: authHeaders,
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
           }
-        } catch (directApiError) {
-          // Sessizce devam et ve alternatif yöntemleri dene
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Faturalar yüklenemedi');
         }
         
-        // Alternatif olarak getInvoices'i kullan
-        const data = await getInvoices();
+        const data = await response.json();
+        console.log("Fatura verileri API'den geldi:", data);
+        console.log("Fatura sayısı:", data?.length);
+        console.log("İlk fatura:", data?.[0]);
         
-        if (!data || data.length === 0) {
-          setInvoices([]);
-          setFilteredInvoices([]);
-          return;
-        }
+        setInvoices(data || []);
+        setFilteredInvoices(data || []);
         
-        console.log("Alternatif yoldan gelen fatura verileri:", data);
-        setInvoices(data);
-        setFilteredInvoices(data);
+        console.log("State güncellendi - invoices:", data?.length, "filteredInvoices:", data?.length);
+        
       } catch (err: any) {
         console.error("Faturalar yüklenirken hata oluştu:", err);
         setError(`Fatura verileri yüklenemedi: ${err.message}`);
+        setInvoices([]);
+        setFilteredInvoices([]);
       } finally {
         setIsLoading(false);
       }
@@ -103,7 +104,10 @@ export default function InvoicesPage() {
       if (activeTab === 'receipts') {
         try {
           setIsLoading(true);
-          const response = await fetch('/api/receipts');
+          const authHeaders = getAuthHeaders();
+          const response = await fetch('/api/receipts', {
+            headers: authHeaders,
+          });
           if (response.ok) {
             const data = await response.json();
             console.log("Fiş giderleri verileri:", data);
@@ -127,7 +131,10 @@ export default function InvoicesPage() {
   useEffect(() => {
     async function loadInitialReceiptExpenses() {
       try {
-        const response = await fetch('/api/receipts');
+        const authHeaders = getAuthHeaders();
+        const response = await fetch('/api/receipts', {
+          headers: authHeaders
+        });
         if (response.ok) {
           const data = await response.json();
           console.log("Sayfa yüklenirken fiş giderleri verileri:", data);
@@ -167,10 +174,21 @@ export default function InvoicesPage() {
     
     // Fatura tipi filtresi (gelen/giden)
     if (typeFilter) {
-      results = results.filter(invoice => 
-        invoice.type?.toLowerCase() === typeFilter.toLowerCase()
-      );
+      results = results.filter(invoice => {
+        const invoiceTypeField = invoice.type || invoice.invoiceType;
+        return invoiceTypeField?.toLowerCase() === typeFilter.toLowerCase();
+      });
     }
+    
+    console.log("Filtreleme sonucu:", {
+      originalCount: invoices.length,
+      filteredCount: results.length,
+      activeTab,
+      typeFilter,
+      statusFilter,
+      searchTerm,
+      firstInvoice: invoices[0]
+    });
     
     setFilteredInvoices(results);
   }, [searchTerm, statusFilter, typeFilter, invoices, activeTab]);
@@ -228,10 +246,12 @@ export default function InvoicesPage() {
       };
       
       // API'ye POST isteği gönder
+      const authHeaders = getAuthHeaders();
       const response = await fetch('/api/receipts', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...authHeaders
         },
         body: JSON.stringify(payload)
       });
@@ -258,7 +278,9 @@ export default function InvoicesPage() {
       });
       
       // Fiş listesini yenile
-      const refreshResponse = await fetch('/api/receipts');
+      const refreshResponse = await fetch('/api/receipts', {
+        headers: authHeaders
+      });
       if (refreshResponse.ok) {
         const refreshedData = await refreshResponse.json();
         setReceiptExpenses(refreshedData);
@@ -349,8 +371,10 @@ export default function InvoicesPage() {
     if (window.confirm('Bu faturayı silmek istediğinizden emin misiniz?')) {
       try {
         // API çağrısı ile silme işlemi gerçekleştir
+        const authHeaders = getAuthHeaders();
         const response = await fetch(`/api/invoices/${id}`, {
           method: 'DELETE',
+          headers: authHeaders
         });
         
         if (!response.ok) {
@@ -574,17 +598,17 @@ export default function InvoicesPage() {
                   key={invoice.id} 
                   className={`
                     hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors
-                    ${invoice.type === 'incoming' ? 'bg-red-50 dark:bg-red-900/10' : 'bg-green-50 dark:bg-green-900/10'}
+                    ${(invoice.type || invoice.invoiceType) === 'INCOMING' ? 'bg-red-50 dark:bg-red-900/10' : 'bg-green-50 dark:bg-green-900/10'}
                   `}
                 >
                   <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
                     {invoice.invoiceNumber}
                   </td>
                   <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                    <div className="w-48 truncate" title={invoice.type === 'incoming' 
+                    <div className="w-48 truncate" title={(invoice.type || invoice.invoiceType) === 'INCOMING' 
                       ? (invoice.issuerName || invoice.customer?.name || "Bilinmeyen") 
                       : (invoice.recipientName || invoice.customer?.name || "Bilinmeyen")}>
-                      {invoice.type === 'incoming' 
+                      {(invoice.type || invoice.invoiceType) === 'INCOMING' 
                         ? (invoice.issuerName || invoice.customer?.name || "Bilinmeyen") 
                         : (invoice.recipientName || invoice.customer?.name || "Bilinmeyen")}
                     </div>
@@ -762,8 +786,10 @@ export default function InvoicesPage() {
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                           onClick={() => {
                             if (window.confirm('Bu fiş kaydını silmek istediğinizden emin misiniz?')) {
+                              const authHeaders = getAuthHeaders();
                               fetch(`/api/receipts?id=${receipt.id}`, {
                                 method: 'DELETE',
+                                headers: authHeaders
                               })
                               .then(response => {
                                 if (response.ok) {

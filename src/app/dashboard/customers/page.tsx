@@ -2,18 +2,25 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
+import { getAuthHeaders } from '@/lib/auth';
 
 // Müşteri veri modeli
 interface Customer {
   id: string;
   name: string;
-  email: string;
-  phone: string;
-  company: string;
-  address: string;
-  status: "active" | "inactive";
-  total_invoiced: number;
-  date_added: string;
+  email: string | null;
+  phone: string | null;
+  mobile: string | null;
+  companyName: string | null;
+  address: string | null;
+  city: string | null;
+  customerType: "INDIVIDUAL" | "CORPORATE" | "GOVERNMENT";
+  isActive: boolean;
+  createdAt: string;
+  taxNumber: string | null;
+  sector: string | null;
 }
 
 export default function CustomersPage() {
@@ -22,32 +29,60 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-  // API'den müşteri verilerini getir
+  const searchParams = useSearchParams();
+
+  // Component mount kontrolü
   useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/customers');
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        setCustomers(data.customers || []);
-        setFilteredCustomers(data.customers || []);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Müşteri verileri yüklenirken hata:', err);
-        setIsLoading(false);
-      }
-    };
+    setMounted(true);
     
+    // Success parametresi var mı kontrol et
+    if (searchParams && searchParams.get('success') === 'true') {
+      setShowSuccessMessage(true);
+      // 5 saniye sonra mesajı gizle
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+    }
+  }, [searchParams]);
+
+  // Müşterileri yükle fonksiyonu
+  const loadCustomers = async () => {
+    try {
+      setIsLoading(true);
+      
+      const authHeaders = getAuthHeaders();
+      const response = await fetch('/api/customers?active=true', {
+        headers: authHeaders
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCustomers(data);
+      } else {
+        console.error('Müşteri verileri yüklenemedi');
+      }
+    } catch (err) {
+      console.error('Müşteri verileri yüklenirken hata:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Müşterileri yükle
+  useEffect(() => {
     if (mounted) {
-      fetchCustomers();
+      loadCustomers();
     }
   }, [mounted]);
+
+  // Success parametresi geldiğinde müşteri listesini yenile
+  useEffect(() => {
+    if (searchParams && searchParams.get('success') === 'true' && mounted) {
+      loadCustomers();
+    }
+  }, [searchParams, mounted]);
 
   // Arama fonksiyonu
   useEffect(() => {
@@ -56,8 +91,9 @@ export default function CustomersPage() {
     } else {
       const results = customers.filter(customer => 
         customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.company.toLowerCase().includes(searchTerm.toLowerCase())
+        (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (customer.companyName && customer.companyName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (customer.sector && customer.sector.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredCustomers(results);
     }
@@ -78,14 +114,26 @@ export default function CustomersPage() {
         </div>
         
         <div className="mt-4 md:mt-0">
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center">
+          <Link href="/dashboard/customers/create" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
             Yeni Müşteri
-          </button>
+          </Link>
         </div>
       </div>
+      
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Müşteri başarıyla oluşturuldu!
+          </div>
+        </div>
+      )}
       
       {/* Arama ve filtreler */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
@@ -160,27 +208,27 @@ export default function CustomersPage() {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">{customer.name}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{customer.company}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{customer.companyName || customer.customerType}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white">{customer.email}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{customer.phone}</div>
+                      <div className="text-sm text-gray-900 dark:text-white">{customer.email || '-'}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{customer.phone || customer.mobile || '-'}</div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 dark:text-white font-medium">
-                      ₺{customer.total_invoiced.toLocaleString('tr-TR')}
+                      <span className="text-gray-500 dark:text-gray-400">Henüz fatura yok</span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(customer.date_added).toLocaleDateString('tr-TR')}
+                      {new Date(customer.createdAt).toLocaleDateString('tr-TR')}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                        customer.status === 'active' 
+                        customer.isActive 
                           ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
                           : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                       }`}>
-                        {customer.status === 'active' ? 'Aktif' : 'Pasif'}
+                        {customer.isActive ? 'Aktif' : 'Pasif'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">

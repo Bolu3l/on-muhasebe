@@ -27,9 +27,10 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' }
     });
     
-    // Decimal alanları dönüştür
+    // Decimal alanları dönüştür ve name alanını oluştur
     const processedEmployees = employees.map((employee: any) => ({
       ...employee,
+      name: `${employee.firstName} ${employee.lastName}`.trim(), // firstName ve lastName'i birleştir
       salary: employee.salary ? Number(employee.salary.toString()) : 0
     }));
     
@@ -80,13 +81,18 @@ export async function POST(req: NextRequest) {
     console.log('Gelen form verisi:', JSON.stringify(body, null, 2));
     
     // Zorunlu alanları kontrol et
-    if (!body.firstName || !body.lastName || !body.position || !body.department || !body.startDate || !body.salary || !body.tcNumber) {
+    if (!body.name || !body.position || !body.department || !body.startDate || !body.salary || !body.taxId) {
       console.log('Zorunlu alan eksik!');
       return NextResponse.json(
-        { error: "Ad, soyad, TC kimlik no, pozisyon, departman, başlangıç tarihi ve maaş zorunlu alanlardır" },
+        { error: "Ad soyad, TC kimlik no, pozisyon, departman, başlangıç tarihi ve maaş zorunlu alanlardır" },
         { status: 400 }
       );
     }
+
+    // Ad soyadı ayır
+    const nameParts = body.name.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
 
     // Maaşı sayısal değere dönüştür
     const salaryNumber = parseFloat(body.salary);
@@ -109,10 +115,10 @@ export async function POST(req: NextRequest) {
       id: crypto.randomUUID(), // Yeni ID oluştur
       userId: decoded.userId,
       companyId: companyId,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      tcNumber: body.tcNumber,
-      sgkNumber: body.sgkNumber || null,
+      firstName: firstName,
+      lastName: lastName,
+      tcNumber: body.taxId || null, // Form'da taxId olarak gönderiliyor
+      sgkNumber: body.socialSecurityNumber || null, // Form'da socialSecurityNumber olarak gönderiliyor
       position: body.position,
       department: body.department,
       startDate: startDate,

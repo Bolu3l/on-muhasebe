@@ -5,9 +5,26 @@ import crypto from 'crypto';
 
 // QNB GİB API Configuration
 const GIB_CONFIG = {
-  // Test Environment URLs
-  USER_SERVICE_WSDL: 'https://erpefaturatest1.qnbesolutions.com.tr/efatura/ws/userService?wsdl',
-  CONNECTOR_SERVICE_WSDL: 'https://erpefaturatest1.qnbesolutions.com.tr/efatura/ws/connectorService?wsdl',
+  // Test Environment URLs - VKN'ye göre seçim
+  getUrls: (vkn: string) => {
+    if (vkn === '0010963799') {
+      return {
+        USER_SERVICE_WSDL: 'https://erpefaturatest1.qnbesolutions.com.tr/efatura/ws/userService?wsdl',
+        CONNECTOR_SERVICE_WSDL: 'https://erpefaturatest1.qnbesolutions.com.tr/efatura/ws/connectorService?wsdl'
+      };
+    } else if (vkn === '0010963800') {
+      return {
+        USER_SERVICE_WSDL: 'https://erpefaturatest2.qnbesolutions.com.tr/efatura/ws/userService?wsdl',
+        CONNECTOR_SERVICE_WSDL: 'https://erpefaturatest2.qnbesolutions.com.tr/efatura/ws/connectorService?wsdl'
+      };
+    } else {
+      // Varsayılan olarak test2 kullan
+      return {
+        USER_SERVICE_WSDL: 'https://erpefaturatest2.qnbesolutions.com.tr/efatura/ws/userService?wsdl',
+        CONNECTOR_SERVICE_WSDL: 'https://erpefaturatest2.qnbesolutions.com.tr/efatura/ws/connectorService?wsdl'
+      };
+    }
+  },
   
   // Test Account Credentials
   TEST_ACCOUNT_1: {
@@ -151,24 +168,37 @@ export class GIBApi {
   }
 
   /**
-   * Initialize SOAP clients with cookie support
+   * Initialize GIB API clients
    */
-  async initialize(): Promise<void> {
+  async initialize(vkn?: string): Promise<void> {
     try {
       console.log('🔧 GİB API clients initialize ediliyor...');
       
-      // Shared cookie jar için options
+      // VKN'ye göre URL'leri seç
+      const urls = GIB_CONFIG.getUrls(vkn || '0010963800'); // Varsayılan 0010963800
+      
+      console.log('📍 Kullanılacak URL\'ler:', {
+        vkn: vkn || 'default',
+        userService: urls.USER_SERVICE_WSDL,
+        connectorService: urls.CONNECTOR_SERVICE_WSDL
+      });
+
+      // SOAP clients için ortak ayarlar
       const sharedOptions = {
-        jar: this.cookieJar
+        jar: this.cookieJar,
+        timeout: 30000,
+        headers: {
+          'User-Agent': 'QNB-ERP-Client/1.0'
+        }
       };
 
       // User Service Client (Login için)
-      this.userServiceClient = await soap.createClientAsync(GIB_CONFIG.USER_SERVICE_WSDL, {
+      this.userServiceClient = await soap.createClientAsync(urls.USER_SERVICE_WSDL, {
         wsdl_options: sharedOptions
       }) as unknown as GIBUserService;
 
       // Connector Service Client (Ana işlemler için)  
-      this.connectorServiceClient = await soap.createClientAsync(GIB_CONFIG.CONNECTOR_SERVICE_WSDL, {
+      this.connectorServiceClient = await soap.createClientAsync(urls.CONNECTOR_SERVICE_WSDL, {
         wsdl_options: sharedOptions
       }) as unknown as GIBConnectorService;
 
@@ -232,6 +262,64 @@ export class GIBApi {
   }
 
   /**
+   * Login with user's own credentials (VKN as username, user password)
+   * Bu metod kullanıcının kendi QNB hesabıyla login yapar
+   */
+  async loginWithUserCredentials(username: string, password: string, vkn: string): Promise<void> {
+    try {
+      if (!this.userServiceClient || !this.connectorServiceClient) {
+        throw new Error('SOAP clients not initialized. Call initialize() first.');
+      }
+
+      console.log(`🔐 QNB sistemine kullanıcı bilgileriyle login yapılıyor - VKN: ${vkn}, Username: ${username}`);
+      
+      // Login işlemi (Cookie otomatik olarak saklanır)
+      const credentials = {
+        userId: username, // VKN kullanıcı adı olarak
+        password: password, // Kullanıcının şifresi
+        lang: 'tr'
+      };
+      
+      const loginResult = await (this.userServiceClient as any).wsLoginAsync(credentials);
+      console.log('🔍 User login result success');
+      
+      // Cookie'yi connector client'a kopyala
+      const userClient = this.userServiceClient as any;
+      const connectorClient = this.connectorServiceClient as any;
+      
+      if (userClient.lastResponseHeaders && userClient.lastResponseHeaders['set-cookie']) {
+        console.log('🍪 Cookieleri connector servicee kopyalıyor...');
+        // Cookieleri manuel olarak set et
+        connectorClient.addHttpHeader('Cookie', userClient.lastResponseHeaders['set-cookie'].join('; '));
+      }
+
+      this.isLoggedIn = true;
+      this.currentVKN = vkn;
+      
+      console.log('✅ QNB sistemine kullanıcı bilgileriyle başarıyla login yapıldı');
+      
+      // Login sonrası ERP bilgilerini ayarla
+      await this.setERPInfo(vkn);
+      
+    } catch (error: any) {
+      console.error('❌ QNB user login başarısız:', error.message);
+      console.error('❌ Error type:', error.constructor.name);
+      if (error.body) {
+        console.error('❌ Error body:', error.body);
+      }
+      this.isLoggedIn = false;
+      this.currentVKN = null;
+      
+      // User-friendly hata mesajı
+      if (error.message.includes('EF0003') || error.message.includes('Oturum açma')) {
+        throw new Error('QNB kimlik bilgileri hatalı. Lütfen VKN ve şifrenizi kontrol edin.');
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
    * Set ERP information for the session
    * C# equivalent: methods.erpBilgileriBelirle("VKN", erbilgileri_belirle);
    */
@@ -264,10 +352,13 @@ export class GIBApi {
   }
 
   /**
-   * Test login with predefined test account
+   * Login with test account
    */
   async testLogin(accountNumber: 1 | 2 = 1): Promise<void> {
     const testAccount = accountNumber === 1 ? GIB_CONFIG.TEST_ACCOUNT_1 : GIB_CONFIG.TEST_ACCOUNT_2;
+    
+    // Initialize with correct VKN for URL selection
+    await this.initialize(testAccount.VKN);
     
     await this.login(testAccount.USERNAME, testAccount.PASSWORD, testAccount.VKN);
   }

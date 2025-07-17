@@ -40,7 +40,19 @@ export default function EditEmployeePage() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch(`/api/employees/${employeeId}`);
+        // localStorage'dan token'ı al
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+          return;
+        }
+        
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+        
+        const response = await fetch(`/api/employees/${employeeId}`, { headers });
         
         if (response.status === 404) {
           setNotFound(true);
@@ -110,13 +122,45 @@ export default function EditEmployeePage() {
     setError(null);
     
     try {
+      // localStorage'dan token'ı al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        setSaving(false);
+        return;
+      }
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+      
+      // Form verilerini API formatına dönüştür
+      const nameParts = formData.name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      const apiData = {
+        firstName,
+        lastName,
+        position: formData.position,
+        department: formData.department,
+        startDate: formData.startDate,
+        salary: formData.salary,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        tcNumber: formData.taxId, // taxId → tcNumber
+        sgkNumber: formData.socialSecurityNumber, // socialSecurityNumber → sgkNumber
+        bankAccount: formData.bankAccount,
+        status: formData.status
+      };
+      
       // API'ye güncelleme isteği gönder
       const response = await fetch(`/api/employees/${employeeId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers,
+        body: JSON.stringify(apiData),
       });
       
       const data = await response.json();
@@ -191,8 +235,23 @@ export default function EditEmployeePage() {
               if (window.confirm("Bu personeli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
                 try {
                   setSaving(true);
+                  
+                  // localStorage'dan token'ı al
+                  const token = localStorage.getItem('auth_token');
+                  if (!token) {
+                    setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+                    setSaving(false);
+                    return;
+                  }
+                  
+                  const headers = {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  };
+                  
                   const response = await fetch(`/api/employees/${employeeId}`, {
                     method: 'DELETE',
+                    headers,
                   });
                   
                   if (!response.ok) {

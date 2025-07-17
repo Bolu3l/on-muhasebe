@@ -95,18 +95,80 @@ export const isTokenExpired = (token: string): boolean => {
 
 // Login function
 export const login = async (email: string, password: string) => {
-  const response = await fetch('/api/auth/login', {
+  console.log('🔍 Login fonksiyonu başlatıldı:', { email, passwordLength: password.length });
+  
+  try {
+    console.log('📡 API isteği gönderiliyor: /api/auth/login');
+    
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    console.log('📊 API yanıtı alındı:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      url: response.url
+    });
+
+    const data = await response.json();
+    console.log('📋 API yanıt verisi:', data);
+
+    if (!response.ok) {
+      console.error('❌ API isteği başarısız:', {
+        status: response.status,
+        error: data.error,
+        debug: data.debug
+      });
+      throw new Error(data.error || 'Giriş başarısız');
+    }
+
+    console.log('✅ Login başarılı, token ve user bilgileri kaydediliyor...');
+    
+    // Token ve user bilgilerini kaydet
+    tokenManager.setToken(data.token);
+    tokenManager.setUser(data.user);
+
+    console.log('🎉 Login işlemi tamamlandı');
+    return data;
+    
+  } catch (error) {
+    console.error('💥 Login fonksiyonunda hata:', error);
+    console.error('🔍 Hata detayları:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    throw error;
+  }
+};
+
+export const register = async (registerData: {
+  email: string;
+  password: string;
+  name: string;
+  companyName: string;
+  taxNumber: string;
+  taxOffice?: string;
+  phone?: string;
+  address?: string;
+}) => {
+  const response = await fetch('/api/auth/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(registerData),
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Giriş başarısız');
+    throw new Error(data.error || 'Kayıt başarısız');
   }
 
   // Token ve user bilgilerini kaydet
@@ -149,7 +211,10 @@ export const getCurrentUser = (): AuthUser | null => {
 };
 
 // Get auth headers for API calls
-export const getAuthHeaders = () => {
+export const getAuthHeaders = (): Record<string, string> => {
   const token = tokenManager.getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (token) {
+    return { 'Authorization': `Bearer ${token}` };
+  }
+  return {};
 }; 

@@ -24,11 +24,15 @@ interface Employee {
 
 interface SalaryPayment {
   id: string;
-  amount: number;
+  grossSalary: number;
+  incomeTax: number;
+  socialSecurity: number;
+  unemploymentInsurance: number;
+  netSalary: number;
+  bonus: number;
   paymentDate: string;
-  description: string | null;
+  paymentPeriod: string;
   status: string;
-  type: string;
   notes?: string | null;
 }
 
@@ -74,8 +78,21 @@ export default function EmployeeDetail() {
         setLoading(true);
         setError(null);
         
+        // localStorage'dan token'ı al
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+          setEmployee(null);
+          return;
+        }
+        
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+        
         // Prim tiplerini getir
-        const bonusTypesResponse = await fetch('/api/bonus-types');
+        const bonusTypesResponse = await fetch('/api/bonus-types', { headers });
         
         if (bonusTypesResponse.ok) {
           const bonusTypesData = await bonusTypesResponse.json();
@@ -93,7 +110,7 @@ export default function EmployeeDetail() {
           return;
         }
         
-        const response = await fetch(`/api/employees/${params.id}`);
+        const response = await fetch(`/api/employees/${params.id}`, { headers });
         
         if (response.status === 404) {
           setEmployee(null);
@@ -105,6 +122,7 @@ export default function EmployeeDetail() {
         }
         
         const data = await response.json();
+        console.log('Personel detay verisi:', data);
         setEmployee(data);
         
         // Personel izin hesaplamaları
@@ -113,7 +131,7 @@ export default function EmployeeDetail() {
         }
       } catch (err) {
         console.error('Personel verilerini getirme hatası:', err);
-        setError('Personel bilgileri yüklenirken bir hata oluştu');
+        setError('Personel bilgileri yüklenirken bir hata oluştu: ' + (err instanceof Error ? err.message : 'Bilinmeyen hata'));
         setEmployee(null);
       } finally {
         setLoading(false);
@@ -314,9 +332,9 @@ export default function EmployeeDetail() {
                 <thead>
                   <tr>
                     <th className="py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tarih</th>
-                    <th className="py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tür</th>
-                    <th className="py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Açıklama</th>
-                    <th className="py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Miktar</th>
+                    <th className="py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dönem</th>
+                    <th className="py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Brüt Maaş</th>
+                    <th className="py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Net Maaş</th>
                     <th className="py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durum</th>
                   </tr>
                 </thead>
@@ -328,19 +346,27 @@ export default function EmployeeDetail() {
                           {new Date(payment.paymentDate).toLocaleDateString('tr-TR')}
                         </td>
                         <td className="py-3 text-sm text-gray-700 dark:text-gray-300">
-                          {payment.type === 'SALARY' && 'Maaş'}
-                          {payment.type === 'ALLOWANCE' && 'Ödenek'}
-                          {payment.type === 'ADVANCE' && 'Avans'}
-                          {payment.type === 'OTHER' && 'Diğer'}
-                          {bonusTypes[payment.type] && bonusTypes[payment.type]}
+                          {payment.paymentPeriod}
                         </td>
-                        <td className="py-3 text-sm text-gray-700 dark:text-gray-300">{payment.description || payment.notes || '-'}</td>
                         <td className="py-3 text-sm font-medium text-gray-900 dark:text-white">
-                          ₺{payment.amount.toLocaleString()}
+                          ₺{payment.grossSalary.toLocaleString()}
+                        </td>
+                        <td className="py-3 text-sm font-medium text-green-600 dark:text-green-400">
+                          ₺{payment.netSalary.toLocaleString()}
                         </td>
                         <td className="py-3">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            {payment.status}
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            payment.status === 'PAID' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              : payment.status === 'PENDING'
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          }`}>
+                            {payment.status === 'PAID' 
+                              ? 'Ödendi' 
+                              : payment.status === 'PENDING' 
+                              ? 'Beklemede' 
+                              : 'İptal'}
                           </span>
                         </td>
                       </tr>

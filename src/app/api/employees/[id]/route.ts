@@ -21,11 +21,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 });
     }
 
-    // Kullanıcının çalışanını getir
+    // Kullanıcının çalışanını getir (ilişkili verilerle birlikte)
     const employee = await prisma.employee.findFirst({
       where: { 
         id: id,
         userId: decoded.userId // Güvenlik: Sadece kendi çalışanını görebilsin
+      },
+      include: {
+        salaryPayments: {
+          orderBy: { paymentDate: 'desc' },
+          take: 10 // Son 10 maaş ödemesi
+        },
+        leaveRequests: {
+          orderBy: { startDate: 'desc' },
+          take: 20 // Son 20 izin talebi
+        }
       }
     });
 
@@ -36,10 +46,25 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       );
     }
 
-    // Decimal değerleri sayıya dönüştür
+    // Decimal değerleri sayıya dönüştür ve name alanını oluştur
     const processedEmployee = {
       ...employee,
-      salary: employee.salary ? Number(employee.salary.toString()) : 0
+      name: `${employee.firstName} ${employee.lastName}`.trim(), // firstName ve lastName'i birleştir
+      salary: employee.salary ? Number(employee.salary.toString()) : 0,
+      // Related data'lardaki decimal değerleri de dönüştür
+      salaryPayments: employee.salaryPayments?.map((payment: any) => ({
+        ...payment,
+        grossSalary: payment.grossSalary ? Number(payment.grossSalary.toString()) : 0,
+        incomeTax: payment.incomeTax ? Number(payment.incomeTax.toString()) : 0,
+        socialSecurity: payment.socialSecurity ? Number(payment.socialSecurity.toString()) : 0,
+        unemploymentInsurance: payment.unemploymentInsurance ? Number(payment.unemploymentInsurance.toString()) : 0,
+        netSalary: payment.netSalary ? Number(payment.netSalary.toString()) : 0,
+        bonus: payment.bonus ? Number(payment.bonus.toString()) : 0
+      })) || [],
+      leaveRequests: employee.leaveRequests?.map((leave: any) => ({
+        ...leave,
+        // Leave request'lerde decimal alan yok, olduğu gibi bırak
+      })) || []
     };
 
     console.log(`Çalışan detayları Prisma'dan başarıyla getirildi: ${id}`);
@@ -119,9 +144,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data: updateData
     });
 
-    // Decimal değerleri sayıya dönüştür
+    // Decimal değerleri sayıya dönüştür ve name alanını oluştur
     const processedEmployee = {
       ...updatedEmployee,
+      name: `${updatedEmployee.firstName} ${updatedEmployee.lastName}`.trim(), // firstName ve lastName'i birleştir
       salary: updatedEmployee.salary ? Number(updatedEmployee.salary.toString()) : 0
     };
 
